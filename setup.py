@@ -14,6 +14,9 @@ setup(
     author = 'Craig Phillips',
     author_email = 'iwonbigbro@gmail.com',
     url = 'https://github.com/iwonbigbro/gsync',
+    requires = [
+        'docopt',
+    ],
     packages = [
         'gsync', 
         'gsync.remote', 
