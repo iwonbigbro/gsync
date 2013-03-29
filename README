@@ -1,0 +1,25 @@
+GSync 0.1.0
+29 March 2013
+
+Copyright (C) 2013 Craig Phillips.  All rights reserved.
+
+Google currently don't produce a Linux variant of their client for Google-Drive.
+This is my implementation of a multiplatform, command line tool that for the
+most part, is intended to behave much like rsync.  I aim to follow the same
+functional implementation of rsync and also provide the same features, enabled
+or disabled through a similar interface of command line options.
+
+There was a close contender for being a suitable client called grive.  This is
+ideal if you only intend to sync a small library of files or if the files being
+synchronised are small in size.  I found the client to be unreliable in other
+cases, crashing and failing to synchronise very little.  I looked over much of
+the code and found that it favours preloading with a hash of the directory to
+be synchronised and all sub directories, before it even synchronises any files.
+This creates a scenario where synchronisation will never take place if the
+preloading fails.  Instead, I will opt to process directories depth first and
+sequentially in order to allow synchronisation to occur immediately.
+
+The only prerequisite is that you have python.  The makefile will take care of
+installing any required python libraries using pip, which will also be obtained.
+
+Happy gsyncing!
