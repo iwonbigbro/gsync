@@ -39,7 +39,8 @@ Arguments:
                              directory.
 
 Options:
- -v, --verbose               increase verbosity
+ -v, --verbose               enable verbose output
+     --debug                 enable debug output
  -q, --quiet                 suppress non-error messages
  -r, --recursive             recurse into directories
  -R, --relative              use relative path names
@@ -122,11 +123,13 @@ See https://github.com/iwonbigbro/gsync for updates, bug reports and answers
 
 args = docopt(doc, version = version, options_first = True)
 
-import libgsync.verbose
-verbose = libgsync.verbose.verbose
+from libgsync.output import verbose, debug
 
 if args['--verbose']:
-    libgsync.verbose.enable()
+    verbose.enable()
+
+if args['--debug']:
+    debug.enable()
 
 from libgsync.crawler import Crawler
 from libgsync.drive import Drive
@@ -139,9 +142,9 @@ threads = []
 dest = args['<path>'].pop()
 
 for d in args['<path>']:
-    verbose("Creating crawler for: %s" % d)
+    debug("Creating crawler for: %s" % d)
 
-    crawler = Crawler(d, Sync(d, dest))
+    crawler = Crawler(d, Sync(d, dest, args))
     crawler.start()
     threads.append(crawler)
 
@@ -151,6 +154,6 @@ for thread in threads:
     except:
         pass
 
-verbose("Crawlers finished, exiting")
+debug("Crawlers finished, exiting")
 
 sys.exit(0)

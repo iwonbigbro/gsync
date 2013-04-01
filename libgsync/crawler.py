@@ -2,7 +2,7 @@
 
 import os, threading, re
 from libgsync.drive import Drive, MimeTypes
-from libgsync.verbose import verbose
+from libgsync.output import verbose, debug
 
 class Crawler(threading.Thread):
     _dev = None
@@ -27,13 +27,11 @@ class Crawler(threading.Thread):
     def _remoteWalk(self, path):
         folders = []
 
-        verbose("Remote walking: drive://%s" % path)
+        debug("Enumerating: drive://%s" % path)
 
         for dent in self._drive.list(str(path)):
             filename = dent['title']
             f = os.path.join(path, filename)
-
-            verbose("Enumerating: %s" % f)
 
             if dent['mimeType'] == MimeTypes.FOLDER:
                 folders.append(f)
@@ -47,7 +45,7 @@ class Crawler(threading.Thread):
     def _localWalk(self, path):
         dev = self._dev
 
-        verbose("Local walking: %s" % path)
+        debug("Enumerating: %s" % path)
 
         for d, dirs, files in os.walk(path):
             for f in files:
@@ -56,7 +54,7 @@ class Crawler(threading.Thread):
                 if dev is not None:
                     st_info = os.stat(f)
                     if st_info.st_dev != dev:
-                        verbose("Not on same device, skipping: %s" % f)
+                        debug("Not on same device, skipping: %s" % f)
                         continue
                     
                 self._callback(f)
@@ -67,7 +65,7 @@ class Crawler(threading.Thread):
                 if dev is not None:
                     st_info = os.stat(subd)
                     if st_info.st_dev != dev:
-                        verbose("Not on same device, skipping: %s" % subd)
+                        debug("Not on same device, skipping: %s" % subd)
                         continue
 
                 self._localWalk(subd)

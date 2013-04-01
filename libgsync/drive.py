@@ -1,8 +1,8 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
-from oauth2client.client import OAuth2Credentials
 import os, sys
-from libgsync.verbose import verbose
+from oauth2client.client import OAuth2Credentials
+from libgsync.output import verbose, debug
 
 class ENoTTY(Exception):
     pass
@@ -114,13 +114,13 @@ class Drive():
         dirname, filename = os.path.split(path)
         files = self.list(str(dirname))
 
-        verbose("Searching for: %s" % path)
+        debug("Searching for: %s" % path)
 
         for f in files:
-            verbose("Checking: %s" % f['title'])
+            debug("Checking: %s" % f['title'])
 
             if f['title'] == filename:
-                verbose("Found: %s" % path)
+                debug("Found: %s" % path)
                 return f
         
         return None
@@ -188,7 +188,7 @@ class Drive():
 
         cached = self._cache.get(parentId, None)
         if cached is not None:
-            verbose('Result already cached: %s' % parentId)
+            debug('Result already cached: %s' % parentId)
             result.extend(cached)
             return result
 
