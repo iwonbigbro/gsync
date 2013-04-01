@@ -134,25 +134,34 @@ if args['--debug']:
 from libgsync.crawler import Crawler
 from libgsync.drive import Drive
 from libgsync.sync import Sync
-import os, logging, re
+import os, logging, re, traceback
 logging.basicConfig()
 
 threads = []
 
-dest = args['<path>'].pop()
+paths = args.pop('<path>', None)
+dest = paths.pop()
 
-for d in args['<path>']:
-    debug("Creating crawler for: %s" % d)
+debug(args)
 
-    crawler = Crawler(d, Sync(d, dest, args))
-    crawler.start()
-    threads.append(crawler)
+try:
+    for d in paths:
+        debug("Creating crawler for: %s" % d)
 
-for thread in threads:
-    try:
-        thread.join()
-    except:
-        pass
+        crawler = Crawler(d, Sync(d, dest, args), args)
+        crawler.start()
+        threads.append(crawler)
+
+except Exception as e:
+    print("Error: %s" % str(e))
+    debug("".join(traceback.format_tb(sys.exc_info()[2])))
+
+finally:
+    for thread in threads:
+        try:
+            thread.join()
+        except:
+            pass
 
 debug("Crawlers finished, exiting")
 

@@ -2,48 +2,34 @@
 
 import os, time, re
 from libgsync.output import verbose, debug
-from libgsync.drive import Drive
+from libgsync.drive import Drive, MimeTypes
+from libgsync.options import Options
 
-class Sync():
+class Sync(Options):
     _remoteRoot = False
     _remoteDest = False
-
-    # Sync options
-    _itemizeChanges = False
-    _ignoreExisting = False
 
     def __init__(self, root, dest, options = None):
         self._drive = Drive()
         self._root = re.sub(r'/+$', "", root)
 
-        self._initOptions(options)
+        self.initialiseOptions(options)
 
         if re.search(r'^drive://', root) is None:
             debug("Local root: %s" % root)
-            self._root = os.path.realpath(root)
+            self._root = root
         else:
             debug("Remote root: %s" % root)
             self._remoteRoot = True
             self._root = re.sub(r'^drive://+', "/", root)
 
         if re.search(r'^drive://', dest) is None:
-            self._dest = os.path.realpath(dest)
+            self._dest = dest
             debug("Local destination: %s" % self._dest)
         else:
             debug("Remote destination: %s" % dest)
             self._remoteDest = True
             self._dest = re.sub(r'^drive://+', "/", dest)
-
-
-    def _initOptions(self, options):
-        if options is not None:
-            for k, v in options.iteritems():
-                if v == False: continue
-
-                if k == '--itemize-changes':
-                    self._itemizeChanges = True
-                elif k == '--ignore-existing':
-                    self._ignoreExisting = True
 
 
     def _getRemoteFile(self, path):
@@ -65,15 +51,22 @@ class Sync():
 
         try:
             # Obtain the file info, following the link
-            st_info = os.stat(os.path.realpath(path))
+            realpath = os.path.realpath(path)
+            st_info = os.stat(realpath)
 
             root, extension = os.path.splitext(path)
             dirname, filename = os.path.split(root)
 
+            if os.path.isdir(realpath):
+                mimeType = MimeTypes.FOLDER
+            else:
+                mimeType = None
+
             local = {
                 'title': filename,
                 'fileExtension': extension,
-                'modifiedDate': time.ctime(st_info.st_mtime)
+                'modifiedDate': time.ctime(st_info.st_mtime),
+                'mimeType': mimeType
             }
             debug("Local mtime: %s" % local['modifiedDate'])
         except OSError, e:
@@ -95,11 +88,16 @@ class Sync():
     def __call__(self, path):
         debug("Synchronising: %s" % path)
 
+        if self._opt_relative:
+            # Supports the foo/./bar notation in rsync.
+            destPath = self._dest + re.sub(r'^.*/\./', "", path)
+        else:
+            destPath = self._dest + path[len(self._root):]
+
         source = self._getFile(path, self._remoteRoot)
-        destPath = self._dest + path[len(self._root):]
         dest = self._getFile(destPath, self._remoteDest)
 
-        if dest is not None and self._ignoreExisting:
+        if dest is not None and self._opt_ignoreExisting:
             debug("File exists on the receiver, skipping: %s" % path)
             return
 

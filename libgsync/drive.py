@@ -15,10 +15,15 @@ class EExchange(Exception):
 
 class EFileNotFound(Exception):
     def __init__(self, filename):
-        self.msg = "File not found: %s" % msg
+        self.filename = filename
+
+    def __str__(self):
+        return "File not found: %s" % self.filename
+
 
 class MimeTypes():
     FOLDER = "application/vnd.google-apps.folder"
+
 
 class Drive():
     _credentials = None

@@ -1,6 +1,7 @@
 /usr/local/lib/python2.7/dist-packages/libgsync/version.py
 /usr/local/lib/python2.7/dist-packages/libgsync/__init__.py
 /usr/local/lib/python2.7/dist-packages/libgsync/output.py
+/usr/local/lib/python2.7/dist-packages/libgsync/options.py
 /usr/local/lib/python2.7/dist-packages/libgsync/drive.py
 /usr/local/lib/python2.7/dist-packages/libgsync/crawler.py
 /usr/local/lib/python2.7/dist-packages/libgsync/sync.py
@@ -8,6 +9,7 @@
 /usr/local/lib/python2.7/dist-packages/libgsync/version.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/__init__.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/output.pyc
+/usr/local/lib/python2.7/dist-packages/libgsync/options.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/drive.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/crawler.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/sync.pyc
