@@ -4,7 +4,7 @@
 
 from distutils.core import setup
 
-version = __import__('gsync.version').get_version()
+version = __import__('libgsync.version').get_version()
 
 setup(
     name = 'gsync',
@@ -16,11 +16,17 @@ setup(
     url = 'https://github.com/iwonbigbro/gsync',
     requires = [
         'docopt',
+        'apiclient',
+        'apiclient.discovery',
+        'json',
+        'oauth2client',
+        'urllib3',
     ],
     packages = [
-        'gsync', 
-        'gsync.remote', 
-        'gsync.local',
+        'libgsync', 
     ],
-    scripts = [ 'bin/gsync.py' ],
+    package_data = {
+        'libgsync': [ 'data/*.json' ],
+    },
+    scripts = [ 'bin/gsync' ],
 )
