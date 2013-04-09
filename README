@@ -22,4 +22,8 @@ sequentially in order to allow synchronisation to occur immediately.
 The only prerequisite is that you have python.  The makefile will take care of
 installing any required python libraries using pip, which will also be obtained.
 
-Happy gsyncing!
+Features to implement:
+
+ * Option --recursive: DONE
+ * Option --dirs: DONE
+

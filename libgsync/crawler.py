@@ -50,7 +50,7 @@ class Crawler(Options, Thread):
                         self._remoteWalk(f)
                     else:
                         # Sync the directory but not its contents
-                        self._callback(f)
+                        self._callback(f+"/")
 
 
     def _localWalk(self, path):

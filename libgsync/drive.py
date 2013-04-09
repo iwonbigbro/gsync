@@ -22,6 +22,7 @@ class EFileNotFound(Exception):
 
 
 class MimeTypes():
+    NONE = "dskbvkdsjbvkjdsbvkjbsdvkjbsdkjvbsdkjbv"
     FOLDER = "application/vnd.google-apps.folder"
 
 
@@ -154,7 +155,7 @@ class Drive():
         if havePath:
             mimeType = MimeTypes.FOLDER
         else:
-            mimeType = None
+            mimeType = MimeTypes.NONE
 
         ents = self._list('root', mimeType)
         if len(ents) == 0:

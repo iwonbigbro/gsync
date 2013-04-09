@@ -5,101 +5,192 @@ from libgsync.output import verbose, debug
 from libgsync.drive import Drive, MimeTypes
 from libgsync.options import Options
 
-class Sync(Options):
-    _remoteRoot = False
-    _remoteDest = False
+g_drive = None
 
-    def __init__(self, root, dest, options = None):
-        self._drive = Drive()
-        self._root = re.sub(r'/+$', "", root)
+class ESyncFileAbstractMethod(Exception):
+    pass
 
-        self.initialiseOptions(options)
+class SyncFileInfo(object):
+    title = None
+    fileExtension = None
+    modifiedDate = None
+    mimeType = MimeTypes.NONE
 
-        if re.search(r'^drive://', root) is None:
-            debug("Local root: %s" % root)
-            self._root = root
-        else:
-            debug("Remote root: %s" % root)
-            self._remoteRoot = True
-            self._root = re.sub(r'^drive://+', "/", root)
+    def __init__(self, title, fileExtension, modifiedDate, mimeType, **misc):
+        self.title = title
+        self.fileExtension = fileExtension
+        self.modifiedDate = modifiedDate
+        self.mimeType = mimeType
 
-        if re.search(r'^drive://', dest) is None:
-            self._dest = dest
-            debug("Local destination: %s" % self._dest)
-        else:
-            debug("Remote destination: %s" % dest)
-            self._remoteDest = True
-            self._dest = re.sub(r'^drive://+', "/", dest)
+    
+class SyncFile(object):
+    path = None
+
+    @staticmethod
+    def create(path):
+        path = re.sub(r'/+$', "", path)
+        filepath = re.sub(r'^drive://+', "/", path)
+
+        if path == filepath:
+            debug("Creating SyncFileLocal(%s)" % filepath)
+            return SyncFileLocal(filepath)
+
+        debug("Creating SyncFileRemote(%s)" % filepath)
+        return SyncFileRemote(filepath)
+
+    def __init__(self, path):
+        self.path = path
+
+    def __str__(self):
+        return self.path
+
+    def __add__(self, path):
+        return self.path + path
+
+    def getInfo(self, path):
+        raise ESyncFileAbstractMethod
+
+    def createDir(self, path):
+        raise ESyncFileAbstractMethod
+
+    def openFile(self, path):
+        raise ESyncFileAbstractMethod
 
 
-    def _getRemoteFile(self, path):
-        debug("Fetching remote file metadata: %s" % path)
+class SyncFileLocal(SyncFile):
 
-        remote = self._drive.find(path)
-        if remote is None:
-            debug("File not found: %s" % path)
-        else:
-            debug("Remote mtime: %s" % remote['modifiedDate'])
-
-        return remote
-
-
-    def _getLocalFile(self, path):
-        local = None
-
+    def getInfo(self, path):
         debug("Fetching local file metadata: %s" % path)
 
         try:
             # Obtain the file info, following the link
             realpath = os.path.realpath(path)
             st_info = os.stat(realpath)
-
             root, extension = os.path.splitext(path)
             dirname, filename = os.path.split(root)
 
             if os.path.isdir(realpath):
                 mimeType = MimeTypes.FOLDER
             else:
-                mimeType = None
+                mimeType = MimeTypes.NONE
 
-            local = {
-                'title': filename,
-                'fileExtension': extension,
-                'modifiedDate': time.ctime(st_info.st_mtime),
-                'mimeType': mimeType
-            }
-            debug("Local mtime: %s" % local['modifiedDate'])
+            info = SyncFileInfo(
+                filename,
+                extension,
+                time.ctime(st_info.st_mtime),
+                mimeType
+            )
         except OSError, e:
             debug("File not found: %s" % path)
-            pass
+            return None
 
-        return local
+        debug("Local mtime: %s" % info.modifiedDate)
+
+        return info
+
+    def createDir(self, path):
+        debug("Creating local directory: %s" % path)
+        pass
+
+    def openFile(self, path, create = False):
+        if create:
+            debug("Creating local file: %s" % path)
+            return None
+
+        debug("Opening local file: %s" % path)
+        return None
 
 
-    def _getFile(self, path, remote):
-        debug("_getFile(%s, %d)" % (path, remote))
+class SyncFileRemote(SyncFile):
 
-        if remote:
-            return self._getRemoteFile(path)
+    def getInfo(self, path):
+        global g_drive
 
-        return self._getLocalFile(path)
-        
+        debug("Fetching remote file metadata: %s" % path)
+
+        info = g_drive.find(path)
+        if info is None:
+            debug("File not found: %s" % path)
+            return None
+
+        info = SyncFileInfo(**info)
+        debug("Remote mtime: %s" % info.modifiedDate)
+
+        return info
+
+    def createDir(self, path):
+        debug("Creating remote directory: %s" % path)
+        pass
+
+    def openFile(self, path, create = False):
+        if create:
+            debug("Creating remote file: %s" % path)
+            return None
+
+        debug("Opening remote file: %s" % path)
+        return None
+
+
+class Sync(Options):
+    src = None
+    dst = None
+
+    def __init__(self, src, dst, options = None):
+        global g_drive
+        g_drive = Drive()
+        self.initialiseOptions(options)
+
+        self.src = SyncFile.create(src)
+        self.dst = SyncFile.create(dst)
 
     def __call__(self, path):
+        itemized, dst = self._sync(path)
+        if self._opt_itemizeChanges:
+            verbose('%s %s' % (str(itemized), dst))
+
+    def _sync(self, path):
         debug("Synchronising: %s" % path)
 
         if self._opt_relative:
             # Supports the foo/./bar notation in rsync.
-            destPath = self._dest + re.sub(r'^.*/\./', "", path)
+            dstPath = self.dst + re.sub(r'^.*/\./', "", path)
         else:
-            destPath = self._dest + path[len(self._root):]
+            dstPath = self.dst + path[len(str(self.src)):]
 
-        source = self._getFile(path, self._remoteRoot)
-        dest = self._getFile(destPath, self._remoteDest)
+        srcFile = self.src.getInfo(path)
+        dstFile = self.dst.getInfo(dstPath)
 
-        if dest is not None and self._opt_ignoreExisting:
+        if dstFile is None:
+            itemized = bytearray("c++++++++++")
+        else:
+            itemized = bytearray("...........")
+
+        if srcFile.mimeType == MimeTypes.FOLDER:
+            itemized[1] = 'd'
+        else:
+            itemized[1] = 'f'
+
+        if dstFile is not None and self._opt_ignoreExisting:
             debug("File exists on the receiver, skipping: %s" % path)
-            return
+            return (itemized, dstPath)
 
-        # TODO: Synchronise the files
+        # A directory will have a trailing /.  Create directories and return.
+        if srcFile.mimeType == MimeTypes.FOLDER:
+            if dstFile is None:
+                self.dst.createDir(dstPath)
+            return (itemized, dstPath)
 
+        # TODO: This needs some work.  When opening a file, we should check
+        # modified date / checksum to see what file is newer and if they
+        # differ and need synchronising.
+
+        # Create file if it doesn't exist.
+        if dstFile is None:
+            create = True
+        else:
+            create = False
+
+        f = self.dst.openFile(dstPath, create = create)
+
+        # TODO: Synchronise the file contents.
+        return (itemized, dstPath)
