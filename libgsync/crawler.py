@@ -19,7 +19,7 @@ class Crawler(Options, Thread):
             self._path = path
             st_info = os.stat(self._path)
 
-            if self._opt_samedev:
+            if self._opt_one_file_system:
                 self._dev = st_info.st_dev
         else:
             self._drive = Drive()

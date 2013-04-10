@@ -1,7 +1,7 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
 import os, time, re
-from libgsync.output import verbose, debug
+from libgsync.output import verbose, debug, itemize
 from libgsync.drive import Drive, MimeTypes
 from libgsync.options import Options
 
@@ -144,9 +144,9 @@ class Sync(Options):
         self.dst = SyncFile.create(dst)
 
     def __call__(self, path):
-        itemized, dst = self._sync(path)
-        if self._opt_itemizeChanges:
-            verbose('%s %s' % (str(itemized), dst))
+        changes, dst = self._sync(path)
+        if self._opt_itemize_changes:
+            itemize(changes, dst)
 
     def _sync(self, path):
         debug("Synchronising: %s" % path)
@@ -161,24 +161,25 @@ class Sync(Options):
         dstFile = self.dst.getInfo(dstPath)
 
         if dstFile is None:
-            itemized = bytearray("c++++++++++")
+            changes = bytearray(">++++++++++")
         else:
-            itemized = bytearray("...........")
+            changes = bytearray("...........")
 
         if srcFile.mimeType == MimeTypes.FOLDER:
-            itemized[1] = 'd'
+            changes[0] = 'c'
+            changes[1] = 'd'
         else:
-            itemized[1] = 'f'
+            changes[1] = 'f'
 
-        if dstFile is not None and self._opt_ignoreExisting:
+        if dstFile is not None and self._opt_ignore_existing:
             debug("File exists on the receiver, skipping: %s" % path)
-            return (itemized, dstPath)
+            return (changes, dstPath)
 
         # A directory will have a trailing /.  Create directories and return.
         if srcFile.mimeType == MimeTypes.FOLDER:
             if dstFile is None:
                 self.dst.createDir(dstPath)
-            return (itemized, dstPath)
+            return (changes, dstPath)
 
         # TODO: This needs some work.  When opening a file, we should check
         # modified date / checksum to see what file is newer and if they
@@ -193,4 +194,5 @@ class Sync(Options):
         f = self.dst.openFile(dstPath, create = create)
 
         # TODO: Synchronise the file contents.
-        return (itemized, dstPath)
+
+        return (changes, dstPath)
