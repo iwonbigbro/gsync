@@ -22,8 +22,23 @@ sequentially in order to allow synchronisation to occur immediately.
 The only prerequisite is that you have python.  The makefile will take care of
 installing any required python libraries using pip, which will also be obtained.
 
-Features to implement:
+Fixed:
+------
 
- * Option --recursive: DONE
- * Option --dirs: DONE
+ * Traversal of the Google drive is now more reliable and requires less CPU
+   and network requests.
+ 
+ * Intermediate directory creation now occurs through a restructure of the
+   directory walking code, ensuring directories are provided to the callback.
+ 
+ * Itemized output now occurs without needing to specify the verbose option.
 
+Issues:
+-------
+
+ * Currently running in dry-run mode while I implement the basics; nothing
+   is created, deleted or modified on disk or in the Google drive.
+
+ * There is a slight difference in behaviour when not run recursively and
+   directories specified on the command line do not have trailing slashes.
+   This will need to be fixed to ensure behaviour is the same as rsync.
