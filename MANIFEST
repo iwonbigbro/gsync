@@ -5,6 +5,7 @@
 /usr/local/lib/python2.7/dist-packages/libgsync/drive.py
 /usr/local/lib/python2.7/dist-packages/libgsync/crawler.py
 /usr/local/lib/python2.7/dist-packages/libgsync/sync.py
+/usr/local/lib/python2.7/dist-packages/libgsync/bind.py
 /usr/local/lib/python2.7/dist-packages/libgsync/data/client.json
 /usr/local/lib/python2.7/dist-packages/libgsync/version.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/__init__.pyc
@@ -13,5 +14,6 @@
 /usr/local/lib/python2.7/dist-packages/libgsync/drive.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/crawler.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/sync.pyc
+/usr/local/lib/python2.7/dist-packages/libgsync/bind.pyc
 /usr/local/bin/gsync
 /usr/local/lib/python2.7/dist-packages/gsync-0.1.0.egg-info
