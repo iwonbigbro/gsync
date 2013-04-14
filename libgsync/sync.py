@@ -11,14 +11,14 @@ class ESyncFileAbstractMethod(Exception):
     pass
 
 class SyncFileInfo(object):
+    id = None
     title = None
-    fileExtension = None
     modifiedDate = None
     mimeType = MimeTypes.NONE
 
-    def __init__(self, title, fileExtension, modifiedDate, mimeType, **misc):
+    def __init__(self, id, title, modifiedDate, mimeType, **misc):
+        self.id = id
         self.title = title
-        self.fileExtension = fileExtension
         self.modifiedDate = modifiedDate
         self.mimeType = mimeType
 
@@ -66,8 +66,7 @@ class SyncFileLocal(SyncFile):
             # Obtain the file info, following the link
             realpath = os.path.realpath(path)
             st_info = os.stat(realpath)
-            root, extension = os.path.splitext(path)
-            dirname, filename = os.path.split(root)
+            dirname, filename = os.path.split(path)
 
             if os.path.isdir(realpath):
                 mimeType = MimeTypes.FOLDER
@@ -75,8 +74,8 @@ class SyncFileLocal(SyncFile):
                 mimeType = MimeTypes.NONE
 
             info = SyncFileInfo(
+                None,
                 filename,
-                extension,
                 time.ctime(st_info.st_mtime),
                 mimeType
             )
@@ -108,7 +107,7 @@ class SyncFileRemote(SyncFile):
 
         debug("Fetching remote file metadata: %s" % path)
 
-        info = g_drive.find(path)
+        info = g_drive.stat(path)
         if info is None:
             debug("File not found: %s" % path)
             return None
