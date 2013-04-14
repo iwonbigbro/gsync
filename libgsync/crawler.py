@@ -5,6 +5,7 @@ from threading import Thread
 from libgsync.drive import Drive, MimeTypes
 from libgsync.output import verbose, debug
 from libgsync.options import Options
+from libgsync.bind import bind
 
 class Crawler(Options, Thread):
     _dev = None
@@ -26,71 +27,53 @@ class Crawler(Options, Thread):
             self._path = re.sub(r'^drive://+', "/", path)
 
         Thread.__init__(self, name = "Crawler: %s" % path)
+    
+
+    def _devCheck(self, dev, path):
+        if dev is not None:
+            st_info = os.stat(path)
+            if st_info.st_dev != dev:
+                debug("Not on same dev: %s" % path)
+                return False
+
+        return True
 
 
-    def _remoteWalk(self, path):
-        folders = []
+    def _walk(self, path, generator, dev):
+        for d, dirs, files in generator(path):
+            if self._opt_dirs:
+                # Sync the directory but not its contents
+                self._callback(d)
 
-        debug("Enumerating: drive://%s" % path)
-
-        for dent in self._drive.list(str(path)):
-            filename = dent['title']
-            f = os.path.join(path, filename)
-
-            if dent['mimeType'] == MimeTypes.FOLDER:
-                folders.append(f)
-            else:
-                self._callback(f)
-
-            # Do nothing with directories if we are not synchronising them
-            if self._opt_recursive or self._opt_dirs:
-                for dent in folders:
-                    if self._opt_recursive:
-                        # Sync the directory and contents
-                        self._remoteWalk(f)
-                    else:
-                        # Sync the directory but not its contents
-                        self._callback(f+"/")
-
-
-    def _localWalk(self, path):
-        dev = self._dev
-
-        debug("Enumerating: %s" % path)
-
-        for d, dirs, files in os.walk(path):
             for f in files:
                 f = os.path.join(d, f)
-
-                if dev is not None:
-                    st_info = os.stat(f)
-                    if st_info.st_dev != dev:
-                        debug("Not on same device, skipping: %s" % f)
-                        continue
+                if not self._devCheck(dev, f):
+                    continue
                     
                 self._callback(f)
 
             # Do nothing with directories if we are not synchronising them
-            if self._opt_recursive or self._opt_dirs:
+            if self._opt_dirs:
                 for subd in dirs:
                     subd = os.path.join(d, subd)
 
-                    if self._opt_recursive:
-                        # Sync the directory and contents
-                        if dev is not None:
-                            st_info = os.stat(subd)
-                            if st_info.st_dev != dev:
-                                debug("Not on same dev, skipping: %s" % subd)
-                                continue
+                    # Sync the directory but not its contents
+                    self._callback(subd)
 
-                        self._localWalk(subd)
-                    else:
-                        # Sync the directory but not its contents
-                        self._callback(subd)
+                    if self._opt_recursive and not self._devCheck(dev, subd):
+                        continue
+
+            if not self._opt_recursive:
+                break
 
 
     def run(self):
+        path = self._path
+        generator = None
+
         if self._drive is None:
-            self._localWalk(self._path)
+            debug("Enumerating: %s" % path)
+            self._walk(path, os.walk, self._dev)
         else:
-            self._remoteWalk(self._path)
+            debug("Enumerating: drive://%s" % path)
+            self._walk(path, bind("walk", self._drive), None)
