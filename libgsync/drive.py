@@ -30,7 +30,8 @@ class Drive():
     _credentials = None
     _service = None
     _storage = None
-    _cache = {}
+    _gcache = {}
+    _pcache = {}
 
     def __init__(self):
         storage = self._getStorage()
@@ -116,93 +117,127 @@ class Drive():
         return credentials
 
 
-    def find(self, path):
-        dirname, filename = os.path.split(path)
-        files = self.list(str(dirname))
+    def walk(self, top, topdown = True, onerror = None, followlinks = False):
+        join = os.path.join
 
-        debug("Searching for: %s" % path)
+        debug("Walking: %s" % top)
 
-        for f in files:
-            debug("Checking: %s" % f['title'])
+        try:
+            names = self.listdir(top)
+        except Exception, e:
+            debug("Exception: %s" % str(e))
 
-            if f['title'] == filename:
-                debug("Found: %s" % path)
-                return f
-        
-        return None
+            if onerror is not None:
+                onerror(e)
+            return
+
+        dirs, nondirs = [], []
+        for name in names:
+            if self.isdir(join(top, name)):
+                dirs.append(name)
+            else:
+                nondirs.append(name)
+
+        if topdown:
+            yield top, dirs, nondirs
+
+        for name in dirs:
+            new_path = join(top, name)
+            for x in self.walk(new_path, topdown, onerror, followlinks):
+                yield x
+
+        if not topdown:
+            yield top, dirs, nondirs
 
 
-    def list(self, path = None, recursive = False):
-        if path is None:
-            path = '/'
-        elif not isinstance(path, str):
-            raise TypeError("path")
-        elif path[0] != '/':
+    def stat(self, path):
+        if path[0] != '/':
             raise EFileNotFound(path)
 
-        # Break down the path and enumerate each folder
-        paths = []
-        while True:
-            path, folder = os.path.split(path)
+        # If it is cached, we can obtain it there.
+        pcache = self._pcache
+        ent = pcache.get(path, None)
+        if ent is not None:
+            debug("Loading from path cache: %s" % path)
+            return ent
 
-            if folder != "":
-                paths.append(folder)
-            elif path != "":
-                paths.append(folder)
-                break
-
-        havePath = (len(paths) > 0)
-        if havePath:
-            mimeType = MimeTypes.FOLDER
-        else:
-            mimeType = MimeTypes.NONE
-
-        ents = self._list('root', mimeType)
+        # First list root and walk to the requested file from there.
+        ents = self._query(parentId = 'root')
         if len(ents) == 0:
             raise EFileNotFound(path)
 
-        if not havePath:
-            return ents
+        join, split = os.path.join, os.path.split
 
+        # Break down the path and enumerate each folder.
+        paths = []
+        while True:
+            path, folder = split(path)
+            if folder != "":
+                paths.append(folder)
+            elif path != "":
+                paths.append(path)
+                break
+
+        # Walk the path until we find the file we are looking for.
         last = False
         while not last:
             d = paths.pop()
             last = (len(paths) == 0)
 
-            if last: mimeType = None
-
             for ent in ents:
-                if d == ent['title']:
-                    ents = self._list(str(ent['id']), mimeType)
+                name = ent['title']
+                path = join("/", d, name)
+
+                # Update path based cache.
+                debug("Updating path cache: %s" % path)
+                pcache[path] = ent
+
+                if d == name:
+                    if last:
+                        return ent
+
+                    ents = self._query(parentId = str(ent['id']))
                     break
 
-        if recursive:
-            def _populate(ents):
-                for ent in ents:
-                    if ent['mimeType'] == MimeTypes.FOLDER:
-                        children = self._list(str(ent['id']), None)
-                        ent['children'] = children
-                        _populate(children)
+        return None
 
-            _populate(ents)
 
-        return ents
+    def isdir(self, path):
+        ent = self.stat(path)
+        if ent is None: return False
+        if ent.get('mimeType') != MimeTypes.FOLDER: return False
 
-                
-    def _list(self, parentId, mimeType):
+        return True
+
+    
+    def listdir(self, path):
+        ent = self.stat(path)
+        if ent is None:
+            return None
+
+        names = []
+        ents = self._query(parentId = str(ent['id']))
+        for ent in ents:
+            names.append(ent['title'])
+
+        return names
+
+
+    def _query(self, **kwargs):
+        parentId = kwargs.get("parentId")
+        mimeType = kwargs.get("mimeType")
+
         result = []
-
-        cached = self._cache.get(parentId, None)
+        cached = self._gcache.get(parentId, None)
         if cached is not None:
-            debug('Result already cached: %s' % parentId)
+            debug('Loading from google cache: %s' % parentId)
             result.extend(cached)
             return result
 
         page_token = None
         service = self._service
-        query = [] 
+        query, ents = [], []
         param = {}
-        ents = []
 
         if parentId is not None:
             query.append('"%s" in parents' % parentId)
@@ -224,7 +259,8 @@ class Drive():
 
             if not page_token: break
 
-        self._cache[parentId] = ents
+        debug("Updating google cache: %s" % parentId)
+        self._gcache[parentId] = ents
 
         # Normalise
         for ent in ents:
