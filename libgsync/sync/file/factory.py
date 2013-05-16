@@ -6,14 +6,21 @@ from libgsync.output import verbose, debug, itemize
 class SyncFileFactory(object):
     @staticmethod
     def create(path):
-        path = re.sub(r'/+$', "", path)
-        filepath = re.sub(r'^drive://+', "/", path)
+        debug("SyncFileFactory.create(%s)" % path)
 
-        if path == filepath:
+        if re.search(r'^drive://+', path) is None:
+            filepath = re.sub(r'/+$', "", path)
+
             debug("Creating SyncFileLocal(%s)" % filepath)
+
             from libgsync.sync.file.local import SyncFileLocal
             return SyncFileLocal(filepath)
 
-        debug("Creating SyncFileRemote(%s)" % filepath)
-        from libgsync.sync.file.remote import SyncFileRemote
-        return SyncFileRemote(filepath)
+        else:
+            filepath = re.sub(r'drive://+', "/", path)
+            filepath = re.sub(r'([^/])/+$', "$1", filepath)
+
+            debug("Creating SyncFileRemote(%s)" % filepath)
+
+            from libgsync.sync.file.remote import SyncFileRemote
+            return SyncFileRemote(filepath)

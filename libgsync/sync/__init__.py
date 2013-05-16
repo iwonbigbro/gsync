@@ -41,13 +41,17 @@ class Sync(Options):
     def _sync(self, path):
         debug("Synchronising: %s" % path)
 
-        relPath = re.sub(r'^%s/' % str(self.src), "", path)
+        relPath = self.src.relativeTo(path)
         debug("Destination: %s" % self.dst)
         debug("Relative: %s" % relPath)
 
         srcFile = self.src.getInfo(relPath)
+        if srcFile is None:
+            debug("File not found: %s" % path)
+            return None
+
         dstPath = self.dst + relPath
-        dstFile = self.dst.getInfo(dstPath)
+        dstFile = self.dst.getInfo(relPath)
         create = False
         update = False
         folder = bool(srcFile.mimeType == MimeTypes.FOLDER)

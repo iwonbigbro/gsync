@@ -1,12 +1,10 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
-import os, re, traceback, sys
-#from threading import Thread
+import os, re, sys
 from multiprocessing import Process
 from libgsync.sync import Sync
 from libgsync.output import verbose, debug
 from libgsync.options import Options
-from libgsync.bind import bind
 
 class Crawler(Options, Process):
     _dev = None
@@ -18,18 +16,18 @@ class Crawler(Options, Process):
     def __init__(self, src, dst, options):
         self._options = options
         self._dst = dst
+        self._src = src
 
         self.initialiseOptions(options)
 
-        if re.search(r'^drive://', src) is None:
-            self._src = src
+        if re.search(r'^drive://+', src) is None:
             st_info = os.stat(self._src)
 
             if self._opt_one_file_system:
                 self._dev = st_info.st_dev
         else:
+            from libgsync.drive import Drive
             self._drive = Drive()
-            self._src = re.sub(r'^drive://+', "/", src)
 
         super(Crawler, self).__init__(name = "Crawler: %s" % src)
     
@@ -75,8 +73,19 @@ class Crawler(Options, Process):
     def run(self):
         srcpath = self._src
         generator = None
+        prefix = ""
 
-        (basepath, path) = os.path.split(srcpath)
+        srcpath = re.sub(r'^drive://+', "/", srcpath)
+        if srcpath != self._src:
+            prefix = "drive://"
+
+        basepath, path = os.path.split(srcpath)
+        basepath = prefix + basepath
+
+        debug("Source prefix: %s" % prefix)
+        debug("Source srcpath: %s" % srcpath)
+        debug("Source basepath: %s" % basepath)
+        debug("Source path: %s" % path)
 
         if self._opt_relative:
             # Supports the foo/./bar notation in rsync.
@@ -84,11 +93,12 @@ class Crawler(Options, Process):
 
         self._sync = Sync(basepath, self._dst, self._options)
 
+        debug("Enumerating: %s" % srcpath)
+
         if self._drive is None:
-            debug("Enumerating: %s" % srcpath)
             self._walk(srcpath, os.walk, self._dev)
         else:
-            debug("Enumerating: drive://%s" % srcpath)
+            from libgsync.bind import bind
             self._walk(srcpath, bind("walk", self._drive), None)
 
         verbose("sent %d bytes  received %d bytes  %.2f bytes/sec" % (

@@ -1,6 +1,6 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
-import os, datetime, time, posix, pickle, dateutil.parser
+import os, datetime, time, posix, pickle, dateutil.parser, re
 from libgsync.output import verbose, debug, itemize
 from libgsync.drive.mimetypes import MimeTypes
 
@@ -115,4 +115,16 @@ class SyncFile(object):
 
         self._updateFile(path, src)
 
+    def stripped(self):
+        return self.path
 
+    def relativeTo(self, path):
+        strippedPath = self.stripped()
+
+        if strippedPath == "/":
+            strippedPath = ""
+
+        expr = r'^%s/+' % strippedPath
+
+        debug("Creating relative path from %s and %s" % (expr, path))
+        return re.sub(expr, "", path)

@@ -1,6 +1,6 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
-import os, sys
+import os, sys, re
 from oauth2client.client import OAuth2Credentials
 from libgsync.output import verbose, debug
 from libgsync.drive.mimetypes import MimeTypes
@@ -22,7 +22,7 @@ class EFileNotFound(Exception):
         return "File not found: %s" % self.filename
 
 
-class Drive():
+class _Drive():
     _credentials = None
     _service = None
     _storage = None
@@ -30,6 +30,8 @@ class Drive():
     _pcache = {}
 
     def __init__(self):
+        debug("Initialising drive")
+
         storage = self._getStorage()
         if storage is not None:
             credentials = storage.get()
@@ -39,11 +41,15 @@ class Drive():
         if credentials is None:
             credentials = self._obtainCredentials()
 
+        debug("Authenticating")
         import httplib2
         http = credentials.authorize(httplib2.Http())
 
+        debug("Building Google Drive service")
         from apiclient.discovery import build
         self._service = build('drive', 'v2', http = http)
+
+        debug("Initialisation complete")
 
 
     def __del__(self):
@@ -58,6 +64,8 @@ class Drive():
         storage = self._storage
         if storage is not None:
             return storage
+
+        debug("Loading storage")
 
         homedir = os.getenv('HOME', '~')
         storagedir = os.path.join(homedir, '.gsync')
@@ -147,6 +155,8 @@ class Drive():
 
 
     def stat(self, path):
+        path = re.sub(r'^drive://+', "/", path)
+
         if path[0] != '/':
             raise EFileNotFound(path)
 
@@ -248,6 +258,8 @@ class Drive():
             if page_token:
                 param['pageToken'] = page_token
 
+            debug("Executing query: %s" % str(param))
+
             files = service.files().list(**param).execute()
 
             ents.extend(files['items'])
@@ -268,3 +280,14 @@ class Drive():
             })
 
         return result
+
+# The fake Drive() constructor and global drive instance.
+g_drive = None
+
+def Drive():
+    global g_drive
+    if g_drive is None:
+        from libgsync.drive import _Drive
+        g_drive = _Drive()
+
+    return g_drive
