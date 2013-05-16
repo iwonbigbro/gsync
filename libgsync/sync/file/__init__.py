@@ -1,11 +1,8 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
-import os, datetime, time, re, struct, stat, posix, pickle
+import os, datetime, time, posix, pickle, dateutil.parser
 from libgsync.output import verbose, debug, itemize
 from libgsync.drive.mimetypes import MimeTypes
-
-PACK_SERIAL = 197001010000
-PACK_FORMAT = '<LIII'
 
 # PACK FORMAT:
 # L = PACK_SERIAL L
@@ -14,25 +11,21 @@ PACK_FORMAT = '<LIII'
 # I = mode
 
 class SyncFileInfo(object):
-    id = None
-    title = None
-    modifiedDate = None
-    mimeType = MimeTypes.NONE
-    statInfo = None
-
     # Note: The description field is currently overloaded to also provide
     #       custom metadata tags that currently aren't facilitated by Google
     #       Drive.
-    def __init__(self, id, title, modifiedDate, mimeType, description, **misc):
+    def __init__(self, id, title, modifiedDate, mimeType,
+                 description = None, **misc):
+
         self.id = id
         self.title = title
         self.modifiedDate = modifiedDate
-        self.__modifiedDate = datetime.datetime.strptime(
-            modifiedDate,
-            "%a %b %d %H:%M:%S %Y"
-        )
+        # ISO 8601 date format
+        self.__modifiedDate = dateutil.parser.parse(
+            modifiedDate, ignoretz=True)
         self.mimeType = mimeType
         self.statInfo = None
+        self.description = None
         index = 1
 
         if isinstance(description, str):
@@ -40,6 +33,8 @@ class SyncFileInfo(object):
             try:
                 self.statInfo = pickle.loads(description.decode("hex"))
             except pickle.UnpicklingError:
+                pass
+            except EOFError:
                 pass
 
         elif isinstance(description, posix.stat_result):

@@ -1,6 +1,6 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
-import os, time
+import os, datetime
 from libgsync.output import verbose, debug, itemize
 from libgsync.drive.mimetypes import MimeTypes
 from libgsync.sync.file import SyncFile, SyncFileInfo
@@ -29,7 +29,9 @@ class SyncFileLocal(SyncFile):
             info = SyncFileInfo(
                 None,
                 filename,
-                time.ctime(st_info.st_mtime),
+                datetime.datetime.utcfromtimestamp(
+                    st_info.st_mtime
+                ).isoformat(),
                 mimeType,
                 st_info
             )

@@ -29,6 +29,7 @@ class SyncFileRemote(SyncFile):
             debug("File not found: %s" % path)
             return None
 
+        debug("Remote file metadata = %s" % str(info))
         info = SyncFileInfo(**info)
         debug("Remote mtime: %s" % info.modifiedDate)
 
