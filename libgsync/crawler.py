@@ -4,7 +4,6 @@ import os, re, traceback, sys
 #from threading import Thread
 from multiprocessing import Process
 from libgsync.sync import Sync
-from libgsync.drive import Drive, MimeTypes
 from libgsync.output import verbose, debug
 from libgsync.options import Options
 from libgsync.bind import bind
@@ -56,7 +55,7 @@ class Crawler(Options, Process):
             if self._opt_dirs or self._opt_recursive:
                 # Sync the directory but not its contents
                 debug("Synchronising directory: %s" % d)
-                self._callback(d)
+                self._sync(d)
             else:
                 sys.stdout.write("skipping directory %s\n" % d)
                 break
@@ -67,7 +66,7 @@ class Crawler(Options, Process):
                     continue
                     
                 debug("Synchronising file: %s" % f)
-                self._callback(f)
+                self._sync(f)
 
             if not self._opt_recursive:
                 break
@@ -83,7 +82,7 @@ class Crawler(Options, Process):
             # Supports the foo/./bar notation in rsync.
             path = re.sub(r'^.*/\./', "", path)
 
-        self._callback = Sync(basepath, self._dst, self._options)
+        self._sync = Sync(basepath, self._dst, self._options)
 
         if self._drive is None:
             debug("Enumerating: %s" % srcpath)
@@ -91,4 +90,10 @@ class Crawler(Options, Process):
         else:
             debug("Enumerating: drive://%s" % srcpath)
             self._walk(srcpath, bind("walk", self._drive), None)
+
+        verbose("sent %d bytes  received %d bytes  %.2f bytes/sec" % (
+            self._sync.totalBytesSent,
+            self._sync.totalBytesReceived,
+            self._sync.rate()
+        ))
 

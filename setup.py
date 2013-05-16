@@ -23,7 +23,10 @@ setup(
         'urllib3',
     ],
     packages = [
-        'libgsync', 
+        'libgsync',
+        'libgsync.drive',
+        'libgsync.sync',
+        'libgsync.sync.file',
     ],
     package_data = {
         'libgsync': [ 'data/*.json' ],

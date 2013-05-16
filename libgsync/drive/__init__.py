@@ -3,6 +3,7 @@
 import os, sys
 from oauth2client.client import OAuth2Credentials
 from libgsync.output import verbose, debug
+from libgsync.drive.mimetypes import MimeTypes
 
 class ENoTTY(Exception):
     pass
@@ -19,11 +20,6 @@ class EFileNotFound(Exception):
 
     def __str__(self):
         return "File not found: %s" % self.filename
-
-
-class MimeTypes():
-    NONE = "dskbvkdsjbvkjdsbvkjbsdvkjbsdkjvbsdkjbv"
-    FOLDER = "application/vnd.google-apps.folder"
 
 
 class Drive():

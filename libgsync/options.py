@@ -1,7 +1,6 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
 import re
-from libgsync.output import debug
 
 class EUnsupportedOption(Exception):
     def __init__(self, option):
