@@ -3,13 +3,13 @@
 import os, datetime, time, re
 from libgsync.output import verbose, debug, itemize
 from libgsync.drive.mimetypes import MimeTypes
-from libgsync.options import Options
+from libgsync.options import GsyncOptions
 from libgsync.sync.file.factory import SyncFileFactory
 
 class ESyncFileAbstractMethod(Exception):
     pass
 
-class Sync(Options):
+class Sync(object):
     src = None
     dst = None
     totalBytesSent = 0L
@@ -21,11 +21,8 @@ class Sync(Options):
         totalBytes = float(self.totalBytesSent + self.totalBytesReceived)
         return float(totalBytes / delta)
 
-    def __init__(self, src, dst, options = None):
-        self.initialiseOptions(options)
-
+    def __init__(self, src, dst):
         self.started = time.time()
-
         self.src = SyncFileFactory.create(src)
         self.dst = SyncFileFactory.create(dst)
 
@@ -33,7 +30,7 @@ class Sync(Options):
         changes = self._sync(path)
 
         if changes is not None:
-            if self._opt_itemize_changes:
+            if GsyncOptions.itemize_changes:
                 itemize(*changes)
             else:
                 verbose(changes[1])
@@ -62,14 +59,14 @@ class Sync(Options):
         else:
             changes = bytearray("...........")
 
-            if self._opt_times:
-                if (not self._opt_update or folder) and srcFile != dstFile:
+            if GsyncOptions.times:
+                if (not GsyncOptions.update or folder) and srcFile != dstFile:
                     changes[4] = 't'
                     update = True
                 else:
                     debug("File up to date: %s" % path)
                     return None
-            elif not self._opt_update or srcFile > dstFile:
+            elif not GsyncOptions.update or srcFile > dstFile:
                 if folder:
                     debug("Don't update folders unless --times: %s" % path)
                     return None
@@ -95,7 +92,7 @@ class Sync(Options):
         if create:
             self.dst.create(dstPath, path)
 
-        elif self._opt_ignore_existing:
+        elif GsyncOptions.ignore_existing:
             debug("File exists on the receiver, skipping: %s" % path)
             return None
 

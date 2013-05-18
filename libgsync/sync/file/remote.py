@@ -33,7 +33,7 @@ class SyncFileRemote(SyncFile):
 
         return info
 
-    def _createDir(self, path):
+    def _createDir(self, path, src = None):
         debug("Creating remote directory: %s" % path)
 
     def _createFile(self, path, src):

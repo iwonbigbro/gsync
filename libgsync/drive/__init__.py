@@ -14,6 +14,9 @@ class EGetAuthURL(Exception):
 class EExchange(Exception):
     pass
 
+class EInvalidRequest(Exception):
+    pass
+
 class EFileNotFound(Exception):
     def __init__(self, filename):
         self.filename = filename
@@ -227,6 +230,100 @@ class _Drive():
             names.append(ent['title'])
 
         return names
+
+
+    def update(self, info, **kwargs):
+        fileId = info.get("id", None)
+        if not fileId:
+            raise EInvalidRequest
+
+        self.create(info, **kwargs)
+
+
+    def create(self, info, **kwargs):
+        fd = kwargs.get("fd")
+        path = kwargs.get("path")
+        data = kwargs.get("data")
+        chunksize = kwargs.get("chunksize", 1024 ** 2)
+        resumable = kwargs.get("resumable", False)
+        mimeType = info.get("mimeType")
+        fileId = info.get("id", None)
+        filename = info.get("title")
+
+        upload_args = {
+            'chunksize': chunksize,
+            'mimetype': mimeType,
+            'resumable': resumable
+        }
+
+        if isinstance(fd, file):
+            from apiclient.http import MediaIoBaseUpload as Uploader
+            upload_args['fh'] = data
+        elif isinstance(path, str):
+            if not os.path.exists(path):
+                raise EFileNotFound(path)
+
+            from apiclient.http import MediaFileUpload as Uploader
+            upload_args['filename'] = path
+        elif data is not None:
+            from apiclient.http import MediaInMemoryUpload as Uploader
+            upload_args['body'] = data
+        elif mimeType != MimeTypes.FOLDER:
+            raise EInvalidRequest
+        else:
+            Uploader = lambda **x: None
+
+        try:
+            media_body = Uploader(**upload_args)
+            metadata = {
+                'mimeType': mimeType,
+                'title': filename,
+                'description': info['description'],
+                'modifiedDate': info['modifiedDate'],
+                'parents': [{ 'id': info["parentId"] }],
+            }
+
+
+            if fileId:
+                state = "Updating"
+                metadata['id'] = fileId
+            else:
+                state = "Creating"
+                debug("Creating remote file: %s" % info['title'])
+
+            if mimeType == MimeTypes.FOLDER:
+                fileType = "directory"
+            else:
+                fileType = "file"
+
+            debug("%s remote %s: %s" % (state, fileType, filename))
+
+            if fileId:
+                self._service.files().insert(
+                    body=metadata,
+                    media_body=media_body
+                ).execute()
+            else:
+                self._service.files().update(
+                    body=metadata,
+                    media_body=media_body
+                ).execute()
+        except Exception, e:
+            debug("An error occurred: %s" % e)
+        
+
+    def download(self, info, **kwargs):
+        fileId = info.get("fileId")
+        if not fileId: 
+            raise EInvalidRequest
+
+        debug("Getting remote file: %s" % fileId)
+        try:
+            return self._service.files().get(fileId=fileId).execute()
+        except Exception, e:
+            debug("An error occurred: %s" % e)
+
+        return None
 
 
     def _query(self, **kwargs):

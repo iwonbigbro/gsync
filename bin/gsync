@@ -58,6 +58,8 @@ Options:
  -k, --copy-dirlinks         transform symlink to a dir into referent dir
  -K, --keep-dirlinks         treat symlinked dir on receiver as dir
  -H, --hard-links            preserve hard links
+ -p, --perms                 preserve permissions
+ -E, --executability         preserve the file's executability
  -t, --times                 preserve modification times
  -O, --omit-dir-times        omit directories from --times
  -S, --sparse                handle sparse files efficiently
@@ -140,11 +142,14 @@ dest = paths.pop()
 
 debug(args)
 
+import libgsync.options
+libgsync.options.initialise(args)
+
 try:
     for d in paths:
         debug("Creating crawler for: %s" % d)
 
-        crawler = Crawler(d, dest, args)
+        crawler = Crawler(d, dest)
         crawler.start()
         crawler.join()
 
