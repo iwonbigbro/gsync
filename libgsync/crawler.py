@@ -91,11 +91,15 @@ class Crawler(Process):
 
         debug("Enumerating: %s" % srcpath)
 
-        if self._drive is None:
-            self._walk(srcpath, os.walk, self._dev)
-        else:
-            from libgsync.bind import bind
-            self._walk(srcpath, bind("walk", self._drive), None)
+        try:
+            if self._drive is None:
+                self._walk(srcpath, os.walk, self._dev)
+            else:
+                from libgsync.bind import bind
+                self._walk(srcpath, bind("walk", self._drive), None)
+        except Exception, e:
+            print("Error: %s" % str(e))
+            debug.exception(e)
 
         verbose("sent %d bytes  received %d bytes  %.2f bytes/sec" % (
             self._sync.totalBytesSent,

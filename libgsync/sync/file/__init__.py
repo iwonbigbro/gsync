@@ -5,6 +5,9 @@ from libgsync.output import verbose, debug, itemize
 from libgsync.drive.mimetypes import MimeTypes
 from libgsync.options import GsyncOptions
 
+class EUnknownSourceType(Exception):
+    pass
+
 class SyncFileInfoDatetime(object):
     __epoch = datetime.datetime(1970, 1, 1)
 
@@ -44,7 +47,8 @@ class SyncFileInfo(object):
     #       custom metadata tags that currently aren't facilitated by Google
     #       Drive.
     def __init__(self, id, title, modifiedDate, mimeType,
-                 description = None, **misc):
+                 description = None, fileSize = 0, md5Checksum = "",
+                 **misc):
 
         self.id = id
         self.title = title
@@ -52,6 +56,8 @@ class SyncFileInfo(object):
         self.mimeType = mimeType
         self.statInfo = None
         self.description = None
+        self.fileSize = fileSize
+        self.md5Checksum = md5Checksum
         self.path = misc.get('path')
 
         if isinstance(description, str):
@@ -70,13 +76,14 @@ class SyncFileInfo(object):
             except pickle.PicklingError:
                 pass
 
-
     def __repr__(self):
         return """SyncFileInfo(
     id="%s",
     title="%s",
     modifiedDate="%s",
     mimeType="%s",
+    fileSize=%d",
+    md5Checksum=%s",
     description="%s",
     statInfo=%s
 )""" % (
@@ -84,20 +91,17 @@ class SyncFileInfo(object):
     self.title,
     self.modifiedDate,
     self.mimeType,
+    self.fileSize,
+    self.md5Checksum,
     self.description,
     self.statInfo
 )
 
 
-    def __getattr__(self, name):
-        try:
-            return self.__dict__[name]
-        except:
-            return getattr(self.modifiedDate, name)
-
-
 class SyncFile(object):
     path = None
+    bytesRead = 0
+    bytesWritten = 0
 
     def __init__(self, path):
         self.path = path
@@ -107,6 +111,12 @@ class SyncFile(object):
 
     def __add__(self, path):
         return os.path.join(self.path, path)
+
+    def getPath(self, path = None):
+        raise ESyncFileAbstractMethod
+
+    def getContent(self, path = None, callback = None):
+        raise ESyncFileAbstractMethod
 
     def getInfo(self, path = None):
         raise ESyncFileAbstractMethod
@@ -128,6 +138,7 @@ class SyncFile(object):
 
     def __createFile(self, path, src = None):
         self._createFile(path, src)
+        self._updateFile(path, src)
         self.__updateStats(path, src)
 
     def __createDir(self, path, src = None):
@@ -145,27 +156,31 @@ class SyncFile(object):
     def __updateStats(self, path, src):
         if src is None: return
 
-        mode, uid, gid, atime, mtime = None, None, None, 0, 0
+        srcInfo = src.getInfo()
+        srcStatInfo = srcInfo.statInfo
+
+        mode, uid, gid, atime, mtime = None, None, None, None, None
 
         if GsyncOptions.perms:
+            if srcStatInfo is not None:
+                mode = srcStatInfo.st_mode
 
-            if src.statInfo is not None:
-                mode = src.statInfo.st_mode
-                uid = src.statInfo.st_uid
-                gid = src.statInfo.st_gid
-
+        if GsyncOptions.owner:
+            uid = srcStatInfo.st_uid
             if uid is not None:
                 debug("Updating with uid: %d" % uid)
 
+        if GsyncOptions.group:
+            gid = srcStatInfo.st_gid
             if gid is not None:
                 debug("Updating with gid: %d" % gid)
 
         if GsyncOptions.times:
-            if src.statInfo is not None:
-                mtime = src.statInfo.st_mtime
-                atime = src.statInfo.st_atime
+            if srcStatInfo is not None:
+                mtime = srcStatInfo.st_mtime
+                atime = srcStatInfo.st_atime
             else:
-                mtime = float(src.modifiedDate)
+                mtime = float(srcInfo.modifiedDate)
                 atime = mtime
 
             debug("Updating with mtime: %0.2f" % mtime)
@@ -175,40 +190,52 @@ class SyncFile(object):
 
 
     def _normaliseSource(self, src):
-        srcInfo = None
+        srcPath, srcObj, srcInfo = None, None, None
 
         debug("src = %s" % repr(src))
 
         if src is not None:
+            from libgsync.sync.file.factory import SyncFileFactory
+
             if isinstance(src, SyncFileInfo):
                 srcInfo = src
+                srcObj = SyncFileFactory.create(srcPath)
+                srcPath = srcObj.path
+
             elif isinstance(src, SyncFile):
+                srcObj = src
                 srcInfo = src.getInfo()
+                srcPath = src.path
+
+            elif isinstance(src, str):
+                srcPath = src
+                srcObj = SyncFileFactory.create(srcPath)
+                srcInfo = srcObj.getInfo()
+
             else:
-                from libgsync.sync.file.factory import SyncFileFactory
-                srcInfo = SyncFileFactory.create(src).getInfo()
+                raise EUnknownSourceType
 
         debug("srcInfo = %s" % repr(srcInfo))
 
-        return (src, srcInfo)
+        return (srcPath, srcInfo, srcObj)
 
     def create(self, path, src = None):
-        (src, srcInfo) = self._normaliseSource(src)
+        (srcPath, srcInfo, srcObj) = self._normaliseSource(src)
 
         if srcInfo is None or srcInfo.mimeType == MimeTypes.FOLDER:
-            self.__createDir(path, srcInfo)
+            self.__createDir(path, srcObj)
             return
 
-        self.__createFile(path, srcInfo)
+        self.__createFile(path, srcObj)
 
     def update(self, path, src):
-        (src, srcInfo) = self._normaliseSource(src)
+        (srcPath, srcInfo, srcObj) = self._normaliseSource(src)
 
         if srcInfo is None or srcInfo.mimeType == MimeTypes.FOLDER:
-            self.__updateDir(path, srcInfo)
+            self.__updateDir(path, srcObj)
             return
 
-        self.__updateFile(path, src)
+        self.__updateFile(path, srcObj)
 
     def stripped(self):
         return self.path

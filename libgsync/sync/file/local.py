@@ -7,13 +7,49 @@ from libgsync.sync.file import SyncFile, SyncFileInfo
 from libgsync.options import GsyncOptions
 
 class SyncFileLocal(SyncFile):
-    def getInfo(self, path = None):
+    def getPath(self, path = None):
         if path is None:
             path = self.path
         else:
             debug("Joining: %s with %s" % (self.path, path))
             path = os.path.join(self.path, path)
             debug("Got: %s" % path)
+
+        return path
+
+    def getContent(self, path = None, callback = None, start = 0):
+        if callback is None:
+            raise Exception("Callback is not defined")
+
+        info = self.getInfo(path)
+        if info is None:
+            raise Exception("Could not obtain file information: %s" % path)
+
+        path = self.getPath(path)
+
+        f = open(path, "r")
+        try:
+            f.seek(start)
+
+            while True:
+                data = f.read(4096)
+                if not data: break
+
+                dataSize = len(data)
+
+                debug("    Read %d bytes" % dataSize)
+
+                self.bytesRead += dataSize
+                callback(data)
+        except Exception, e:
+            debug("Read failed: %s" % str(e))
+        finally:
+            f.close()
+
+        return 0
+
+    def getInfo(self, path = None):
+        path = self.getPath(path)
 
         debug("Fetching local file metadata: %s" % path)
 
@@ -34,7 +70,9 @@ class SyncFileLocal(SyncFile):
                     st_info.st_mtime
                 ).isoformat(),
                 mimeType,
-                st_info,
+                description=st_info,
+                fileSize=st_info.st_size,
+                checksum="TODO:checksum",
                 path=path
             )
         except OSError, e:
@@ -49,12 +87,16 @@ class SyncFileLocal(SyncFile):
         if GsyncOptions.dry_run: return
 
         if uid is not None:
-            if gid is not None:
-                os.chown(path, uid, gid)
-            else:
+            try:
                 os.chown(path, uid, -1)
-        elif gid is not None:
-            os.chown(path, -1, gid)
+            except OSError, e:
+                pass
+
+        if gid is not None:
+            try:
+                os.chown(path, -1, gid)
+            except OSError, e:
+                pass
 
         if mode is not None:
             os.chmod(path, mode)
@@ -74,7 +116,47 @@ class SyncFileLocal(SyncFile):
         debug("Updating local directory: %s" % path)
 
     def _createFile(self, path, src):
+        path = self.getPath(path)
+
         debug("Creating local file: %s" % path)
 
+        f = None
+        try:
+            if not GsyncOptions.dry_run:
+                f = open(path, "w")
+        except Exception, e:
+            debug("Creation failed: %s" % str(e))
+        finally:
+            if f is not None: f.close()
+
     def _updateFile(self, path, src):
-        debug("Updating local file: %s" % path)
+        path = self.getPath(path)
+        info = self.getInfo(path)
+
+        try:
+            fileSize = info.statInfo.st_size
+        except:
+            fileSize = 0
+
+        debug("Updating local file %s" % path)
+
+        def __updateFile_dataReceiver(data):
+            dataSize = len(data)
+
+            f = None
+            try:
+                if not GsyncOptions.dry_run:
+                    f = open(path, "a")
+                    f.write(data)
+
+                self.bytesWritten += dataSize
+                debug("    Written %d bytes" % dataSize)
+            except Exception, e:
+                debug("Write failed: %s" % str(e))
+            finally:
+                if f is not None: f.close()
+
+        src.getContent(
+            start=fileSize,
+            callback=__updateFile_dataReceiver
+        )

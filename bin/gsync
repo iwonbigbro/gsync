@@ -60,8 +60,13 @@ Options:
  -H, --hard-links            preserve hard links
  -p, --perms                 preserve permissions
  -E, --executability         preserve the file's executability
+     --chmod=CHMOD           affect file and/or directory permissions
+ -o, --owner                 preserve owner (super-user only)
+ -g, --group                 preserve group
  -t, --times                 preserve modification times
  -O, --omit-dir-times        omit directories from --times
+     --super                 receiver attempts super-user activities
+     --fake-super            store/recover privileged attrs using xattrs
  -S, --sparse                handle sparse files efficiently
  -n, --dry-run               perform a trial run with no changes made
  -x, --one-file-system       don't cross filesystem boundaries
@@ -125,6 +130,7 @@ See https://github.com/iwonbigbro/gsync for updates, bug reports and answers
 
 args = docopt(doc, version = version, options_first = True)
 
+import os, logging, re
 from libgsync.output import verbose, debug
 
 if args['--verbose']:
@@ -133,8 +139,11 @@ if args['--verbose']:
 if args['--debug']:
     debug.enable()
 
+if not args['--super'] and os.getuid() != 0:
+    if args['--owner'] or args['--group']:
+        print("Warning: Not running as root, file ownership may be ignored")
+
 from libgsync.crawler import Crawler
-import os, logging, re, traceback
 logging.basicConfig()
 
 paths = args.pop('<path>', None)
@@ -153,9 +162,9 @@ try:
         crawler.start()
         crawler.join()
 
-except Exception as e:
+except Exception, e:
     print("Error: %s" % str(e))
-    debug("".join(traceback.format_tb(sys.exc_info()[2])))
+    debug.exception(e)
 
 debug("Crawlers finished, exiting")
 

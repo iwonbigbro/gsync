@@ -66,14 +66,32 @@ class Sync(object):
                 else:
                     debug("File up to date: %s" % path)
                     return None
-            elif not GsyncOptions.update or srcFile > dstFile:
+
+            if srcFile.fileSize != dstFile.fileSize:
+                if folder:
+                    debug("Folder size differs, so what...?: %s" % path)
+                    return None
+
+                debug("File size mismatch: %s" % path)
+                debug("    source size:      %d" % srcFile.fileSize)
+                debug("    destination size: %d" % dstFile.fileSize)
+                if GsyncOptions.append:
+                    update = True
+                else:
+                    create = True
+
+            if (not GsyncOptions.update and (update or create)) or srcFile.modifiedDate > dstFile.modifiedDate:
                 if folder:
                     debug("Don't update folders unless --times: %s" % path)
                     return None
 
+                debug("File timestamp mismatch: %s" % path)
+                debug("    source mtime:      %d" % srcFile.modifiedDate)
+                debug("    destination mtime: %d" % dstFile.modifiedDate)
                 changes[4] = 'T'
                 update = True
-            else:
+
+            if not update and not create:
                 debug("File up to date: %s" % path)
                 return None
 
@@ -99,6 +117,7 @@ class Sync(object):
         else:
             self.dst.update(dstPath, path)
 
-        self.totalBytesSent += 0
+        self.totalBytesSent += self.dst.bytesWritten
+        self.totalBytesReceived += self.dst.bytesRead
 
         return (changes, relPath)
