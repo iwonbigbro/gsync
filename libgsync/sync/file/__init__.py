@@ -113,7 +113,14 @@ class SyncFile(object):
         return os.path.join(self.path, path)
 
     def getPath(self, path = None):
-        raise ESyncFileAbstractMethod
+        if path is None:
+            path = self.path
+        else:
+            debug("Joining: %s with %s" % (self.path, path))
+            path = os.path.join(self.path, path)
+            debug("Got: %s" % path)
+
+        return path
 
     def getContent(self, path = None, callback = None):
         raise ESyncFileAbstractMethod

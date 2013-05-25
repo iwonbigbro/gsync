@@ -8,13 +8,24 @@ class SyncFileRemote(SyncFile):
     def stripped(self):
         return re.sub(r'^drive://+', "/", self.path)
 
+    def getContent(self, path = None, callback = None, offset = 0):
+        if callback is None:
+            raise Exception("Callback is not defined")
+
+        info = self.getInfo(path)
+        if info is None:
+            raise Exception("Could not obtain file information: %s" % path)
+
+        path = self.getPath(path)
+        
+        # The Drive() instance is self caching.
+        from libgsync.drive import Drive
+        drive = Drive()
+
+        pass
+
     def getInfo(self, path = None):
-        if path is None:
-            path = self.path
-        else:
-            debug("Joining: %s with %s" % (self.path, path))
-            path = os.path.join(self.path, path)
-            debug("Got: %s" % path)
+        path = self.getPath(path)
 
         debug("Fetching remote file metadata: %s" % path)
 
@@ -28,7 +39,7 @@ class SyncFileRemote(SyncFile):
             return None
 
         debug("Remote file metadata = %s" % str(info))
-        info = SyncFileInfo(**info)
+        info = SyncFileInfo(info)
         debug("Remote mtime: %s" % info.modifiedDate)
 
         return info

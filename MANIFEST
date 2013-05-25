@@ -6,6 +6,7 @@
 /usr/local/lib/python2.7/dist-packages/libgsync/bind.py
 /usr/local/lib/python2.7/dist-packages/libgsync/drive/__init__.py
 /usr/local/lib/python2.7/dist-packages/libgsync/drive/mimetypes.py
+/usr/local/lib/python2.7/dist-packages/libgsync/drive/file.py
 /usr/local/lib/python2.7/dist-packages/libgsync/sync/__init__.py
 /usr/local/lib/python2.7/dist-packages/libgsync/sync/file/local.py
 /usr/local/lib/python2.7/dist-packages/libgsync/sync/file/remote.py
@@ -20,6 +21,7 @@
 /usr/local/lib/python2.7/dist-packages/libgsync/bind.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/drive/__init__.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/drive/mimetypes.pyc
+/usr/local/lib/python2.7/dist-packages/libgsync/drive/file.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/sync/__init__.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/sync/file/local.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/sync/file/remote.pyc

@@ -7,17 +7,7 @@ from libgsync.sync.file import SyncFile, SyncFileInfo
 from libgsync.options import GsyncOptions
 
 class SyncFileLocal(SyncFile):
-    def getPath(self, path = None):
-        if path is None:
-            path = self.path
-        else:
-            debug("Joining: %s with %s" % (self.path, path))
-            path = os.path.join(self.path, path)
-            debug("Got: %s" % path)
-
-        return path
-
-    def getContent(self, path = None, callback = None, start = 0):
+    def getContent(self, path = None, callback = None, offset = 0):
         if callback is None:
             raise Exception("Callback is not defined")
 
@@ -29,7 +19,7 @@ class SyncFileLocal(SyncFile):
 
         f = open(path, "r")
         try:
-            f.seek(start)
+            f.seek(offset)
 
             while True:
                 data = f.read(4096)
