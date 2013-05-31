@@ -92,7 +92,7 @@ class Sync(object):
                 update = True
 
             if not update and not create:
-                debug("File up to date: %s" % path)
+                debug("File up to date: %s" % dstPath)
                 return None
 
         if folder:

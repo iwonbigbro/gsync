@@ -18,7 +18,9 @@ setup(
         'docopt',
         'apiclient',
         'apiclient.discovery',
+        'httplib2',
         'json',
+        'pickle',
         'oauth2client',
         'urllib3',
     ],
@@ -27,6 +29,8 @@ setup(
         'libgsync.drive',
         'libgsync.sync',
         'libgsync.sync.file',
+        'libgsync.sync.file.local',
+        'libgsync.sync.file.remote',
     ],
     package_data = {
         'libgsync': [ 'data/*.json' ],

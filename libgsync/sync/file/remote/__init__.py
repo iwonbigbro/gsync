@@ -3,26 +3,27 @@
 import os, re
 from libgsync.output import verbose, debug, itemize
 from libgsync.sync.file import SyncFile, SyncFileInfo
+from apiclient.http import MediaIoBaseUpload
 
 class SyncFileRemote(SyncFile):
     def stripped(self):
         return re.sub(r'^drive://+', "/", self.path)
 
-    def getContent(self, path = None, callback = None, offset = 0):
-        if callback is None:
-            raise Exception("Callback is not defined")
-
+    def getUploader(self, path = None):
         info = self.getInfo(path)
         if info is None:
             raise Exception("Could not obtain file information: %s" % path)
 
         path = self.getPath(path)
-        
-        # The Drive() instance is self caching.
+
         from libgsync.drive import Drive
         drive = Drive()
 
-        pass
+        f = drive.open(path, "r")
+        if f is None:
+            raise Exception("Open failed: %s" % path)
+
+        return MediaIoBaseUpload(f, info.mimeType, resumable=True)
 
     def getInfo(self, path = None):
         path = self.getPath(path)

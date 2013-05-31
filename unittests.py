@@ -1,11 +1,38 @@
 #!/usr/bin/env python
 
-import unittest
+import unittest, os
 from libgsync.output import debug
 from libgsync.drive import Drive
 from libgsync.drive import DriveFile
+from libgsync.config import Data
 
-debug.enable()
+#debug.enable()
+
+class TestConfigData(unittest.TestCase):
+    def test_DataSaveAndLoad(self):
+        path = "/tmp/config_data_test"
+
+        d = Data(path)
+        d.set({ 'a': 1, 'b': 2 })
+        d.save()
+
+        o = d.load()
+
+        self.assertEqual(o['a'], 1)
+        self.assertEqual(o['b'], 2)
+
+    def test_DataSaveAndLoad_JSONEncoder(self):
+        path = "/tmp/config_data_test"
+
+        d = Data(path, encoder="json")
+        d.set({ 'a': 1, 'b': 2 })
+        d.save()
+
+        o = d.load()
+
+        self.assertEqual(o['a'], 1)
+        self.assertEqual(o['b'], 2)
+
 
 class TestDrive(unittest.TestCase):
     def setUp(self):
@@ -39,12 +66,15 @@ class TestDrive(unittest.TestCase):
 
         drive.rm("/unittest/test_mkdir", recursive=True)
 
-    def test_open_for_write(self):
+    def test_open_for_read(self):
         drive = Drive()
-        f = drive.open("/unittest/open_for_write.bin", "w")
+        f = drive.open("/unittest/open_for_read.txt", "r")
         self.assertIsNotNone(f)
 
-        f.write("This is some data for the file")
+    def test_open_for_read_and_seek(self):
+        drive = Drive()
+        f = drive.open("/unittest/open_for_read.txt", "r")
+        f.seek(0, os.SEEK_END)
 
         self.assertNotEqual(f.tell(), 0)
 

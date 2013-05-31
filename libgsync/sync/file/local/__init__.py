@@ -5,12 +5,10 @@ from libgsync.output import verbose, debug, itemize
 from libgsync.drive.mimetypes import MimeTypes
 from libgsync.sync.file import SyncFile, SyncFileInfo
 from libgsync.options import GsyncOptions
+from apiclient.http import MediaIoBaseUpload
 
 class SyncFileLocal(SyncFile):
-    def getContent(self, path = None, callback = None, offset = 0):
-        if callback is None:
-            raise Exception("Callback is not defined")
-
+    def getUploader(self, path = None):
         info = self.getInfo(path)
         if info is None:
             raise Exception("Could not obtain file information: %s" % path)
@@ -18,25 +16,10 @@ class SyncFileLocal(SyncFile):
         path = self.getPath(path)
 
         f = open(path, "r")
-        try:
-            f.seek(offset)
+        if f is None:
+            raise Exception("Open failed: %s" % path)
 
-            while True:
-                data = f.read(4096)
-                if not data: break
-
-                dataSize = len(data)
-
-                debug("    Read %d bytes" % dataSize)
-
-                self.bytesRead += dataSize
-                callback(data)
-        except Exception, e:
-            debug("Read failed: %s" % str(e))
-        finally:
-            f.close()
-
-        return 0
+        return MediaIoBaseUpload(f, info.mimeType, resumable=True)
 
     def getInfo(self, path = None):
         path = self.getPath(path)
@@ -123,30 +106,35 @@ class SyncFileLocal(SyncFile):
         path = self.getPath(path)
         info = self.getInfo(path)
 
-        try:
-            fileSize = info.statInfo.st_size
-        except:
-            fileSize = 0
-
         debug("Updating local file %s" % path)
 
-        def __updateFile_dataReceiver(data):
-            dataSize = len(data)
+        uploader = src.getUploader()
 
-            f = None
-            try:
-                if not GsyncOptions.dry_run:
-                    f = open(path, "a")
-                    f.write(data)
+        f = None
+        bytesWritten = 0
+        chunkSize = uploader.chunksize()
+        fileSize = uploader.size()
 
-                self.bytesWritten += dataSize
-                debug("    Written %d bytes" % dataSize)
-            except Exception, e:
-                debug("Write failed: %s" % str(e))
-            finally:
-                if f is not None: f.close()
+        try:
+            if not GsyncOptions.dry_run:
+                f = open(path, "w")
 
-        src.getContent(
-            start=fileSize,
-            callback=__updateFile_dataReceiver
-        )
+            while bytesWritten < fileSize:
+                chunk = uploader.getbytes(bytesWritten, chunkSize)
+
+                if not chunk: break
+                if f is not None: f.write(chunk)
+
+                bytesWritten += len(chunk)
+
+            self.bytesWritten += bytesWritten
+            debug("    Written %d bytes" % bytesWritten)
+
+            if bytesWritten < fileSize:
+                raise Exception("Got %d bytes, expected %d bytes" % (
+                    bytesWritten, fileSize
+                ))
+        except Exception, e:
+            debug("Write failed: %s" % str(e))
+        finally:
+            if f is not None: f.close()

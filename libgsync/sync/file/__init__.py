@@ -122,7 +122,7 @@ class SyncFile(object):
 
         return path
 
-    def getContent(self, path = None, callback = None):
+    def getUploader(self, path = None):
         raise ESyncFileAbstractMethod
 
     def getInfo(self, path = None):

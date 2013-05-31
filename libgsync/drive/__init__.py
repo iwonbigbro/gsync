@@ -25,6 +25,7 @@ class EFileNotFound(Exception):
     def __str__(self):
         return "File not found: %s" % self.filename
 
+
 class DriveFileObject(object):
     def __init__(self, path, mode = "r"):
         # Public
@@ -42,19 +43,21 @@ class DriveFileObject(object):
         self._mimeType = MimeTypes.BINARY_FILE
         self._parentId = None
 
+        # Only mode support at present
+        if mode != "r":
+            raise IOError("Unsupported mode: %s" % mode)
+
         if self._info:
-            self._size = self._info.fileSize
+            # File size is set to None for empty documents.
+            if self._info.fileSize is not None:
+                self._size = int(self._info.fileSize)
+
             self.description = self._info.description
-        elif mode in [ "r", "r+" ]:
-            raise IOError("File not found: %s" % path)
 
         dirname, filename = os.path.split(path)
         self._dirname = dirname
         self._filename = filename
         self._parentInfo = self._drive.stat(dirname)
-
-        if re.search(r'(w|[arw]\+)', mode) and not self._parentInfo:
-            raise IOError("No such directory: %s" % filedir)
 
     def _requiredOpen(self):
         if self.closed:
@@ -141,6 +144,11 @@ class DriveFileObject(object):
     def write(self, data):
         self._requiredOpen()
 
+        raise Exception("Not currently supported by Google Drive API v2")
+
+        # A rough implementation of how this is expected to work when append
+        # mode is eventually supported by Google Drive API.
+
         service = self._drive.service()
         http = service._http
         http.follow_redirects = False 
@@ -158,30 +166,35 @@ class DriveFileObject(object):
         try:
             if not self._info:
                 debug("Creating file metadata")
-                self._info = service.files().insert(
-                    body = {
-                        'title': self._filename,
-                        'description': self.description,
-                        'modifiedDate': str(self.modifiedDate),
-                        'mimeType': self._mimeType,
-                        'parents': [{ 'id': self._parentId }]
-                    }
+                body = {
+                    'title': self._filename,
+                    'description': self.description,
+                    'mimeType': self._mimeType
+                }
+
+                #    'modifiedDate': str(self.modifiedDate),
+                if self._parentId:
+                    body['parents'] = [{ 'id': self._parentId }]
+
+                debug("body = %s" % body)
+                info = service.files().insert(
+                    body = body
                 ).execute()
 
-            debug("Obtaining upload URL")
-            url = service.files().get(
-                fileId=self._info.id
-            ).execute().get('uploadUrl')
+                if info is None:
+                    raise Exception("Insert failed")
 
-            debug("Upload URL: %s" % url)
+                self._info = DriveFile(**info)
+
+            debug(self._info._dict)
         except Exception, e:
+            debug.exception()
             debug("Exception: %s" % str(e))
             return
 
-        if not url: return
-
-        res = http.request(
-            url, method="PUT", body=data, headers=headers
+        service.files().update(
+            fileId = self._info.id
+            # TODO: Some sort of chunk.
         ).execute()
 
         if res.status in [ 301, 302, 303, 307, 308 ] and 'location' in res: 
@@ -195,14 +208,23 @@ class DriveFileObject(object):
 class _Drive():
     _credentials = None
     _service = None
-    _storage = None
+    _credentialStorage = None
     _gcache = {}
     _pcache = {}
 
     def __init__(self):
         debug("Initialising drive")
 
-        storage = self._getStorage()
+        self._service = None
+        self._http = None
+
+        debug("Initialisation complete")
+
+    def service(self):
+        if self._service is not None:
+            return self._service
+
+        storage = self._getCredentialStorage()
         if storage is not None:
             credentials = storage.get()
         else:
@@ -213,36 +235,77 @@ class _Drive():
 
         debug("Authenticating")
         import httplib2
-        http = credentials.authorize(httplib2.Http())
+        http = credentials.authorize(
+            httplib2.Http(cache = self._getConfigDir("http_cache"))
+        )
 
-        debug("Building Google Drive service")
-        from apiclient.discovery import build
-        self._service = build('drive', 'v2', http = http)
+        debug("Loading Google Drive service from config")
+        from libgsync.config import Data
+        cfg = self._getConfigFile("drive.v2.service")
+        ds = Data(cfg, encoder="json")
+        ds.load()
+        info = ds.get()
+        content = None
 
-        debug("Initialisation complete")
+        from apiclient.discovery import build_from_document, DISCOVERY_URI
+        import time
 
+        if info and int(time.time()) < int(info.get('expires', 0)):
+            content = str(ds)
+
+        if not content:
+            debug("Downloading API service")
+
+            import uritemplate
+            url = uritemplate.expand(DISCOVERY_URI, {
+                'api': 'drive',
+                'apiVersion': 'v2'
+            })
+            res, content = http.request(url)
+
+            if not res.status in [ 200, 202 ]:
+                return None
+
+            ds.set(content)
+
+            # API expires after 24 hours.
+            info = ds.get()
+            info['expires'] = int(time.time()) + 86400
+            ds.save(info)
+
+        debug("Building Google Drive service from document")
+        self._service = build_from_document(content,
+            http = http, base = DISCOVERY_URI)
+
+        return self._service
 
     def __del__(self):
         credentials = self._credentials
         if credentials:
-            storage = self._getStorage()
+            storage = self._getCredentialStorage()
             if storage is not None:
                 storage.put(credentials)
 
-    def _getConfigDir(self):
+    def _getConfigDir(self, subdir = None):
         homedir = os.getenv('HOME', '~')
         configdir = os.path.join(homedir, '.gsync')
 
         if not os.path.exists(configdir):
             os.mkdir(configdir, 0700)
 
+        if subdir is not None:
+            configdir = os.path.join(configdir, subdir)
+
+            if not os.path.exists(configdir):
+                os.mkdir(configdir, 0700)
+
         return configdir
 
     def _getConfigFile(self, name):
         return os.path.join(self._getConfigDir(), name)
 
-    def _getStorage(self):
-        storage = self._storage
+    def _getCredentialStorage(self):
+        storage = self._credentialStorage
         if storage is not None:
             return storage
 
@@ -255,10 +318,9 @@ class _Drive():
 
         from oauth2client.file import Storage
         storage = Storage(storagefile)
-        self._storage = storage
+        self._credentialStorage = storage
 
         return storage
-
 
     def _obtainCredentials(self):
         self._credentials = None
@@ -295,9 +357,6 @@ class _Drive():
         self._credentials = credentials
 
         return credentials
-
-    def service(self):
-        return self._service
 
     def walk(self, top, topdown = True, onerror = None, followlinks = False):
         join = os.path.join
@@ -403,7 +462,6 @@ class _Drive():
         #endfor
         return None
 
-
     def rm(self, path, recursive=False):
         pass
     
@@ -429,7 +487,7 @@ class _Drive():
 
             debug("Creating directory: %s" % path)
  
-            info = self._service.files().insert(
+            info = self.service().files().insert(
                 body = {
                     'title': basename,
                     'mimeType': MimeTypes.FOLDER,
@@ -447,14 +505,12 @@ class _Drive():
 
         return None
 
-
     def isdir(self, path):
         ent = self.stat(path)
         if ent is None: return False
         if ent.mimeType != MimeTypes.FOLDER: return False
 
         return True
-
     
     def listdir(self, path):
         ent = self.stat(path)
@@ -468,10 +524,8 @@ class _Drive():
 
         return names
 
-
     def open(self, path, mode = "r"):
         return DriveFileObject(path, mode)
-
 
     def _query(self, **kwargs):
         parentId = kwargs.get("parentId")
@@ -486,7 +540,7 @@ class _Drive():
                 return result
 
         page_token = None
-        service = self._service
+        service = self.service()
         query, ents = [], []
         param = {}
 
@@ -529,7 +583,6 @@ g_drive = None
 def Drive():
     global g_drive
     if g_drive is None:
-        from libgsync.drive import _Drive
         g_drive = _Drive()
 
     return g_drive
