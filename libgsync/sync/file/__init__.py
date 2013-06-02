@@ -1,6 +1,10 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
-import os, datetime, time, posix, pickle, dateutil.parser, re
+import os, datetime, time, posix, dateutil.parser, re
+
+try: import cPickle as pickle
+except Exception: import pickle
+
 from libgsync.output import verbose, debug, itemize
 from libgsync.drive.mimetypes import MimeTypes
 from libgsync.options import GsyncOptions
@@ -56,9 +60,9 @@ class SyncFileInfo(object):
         self.mimeType = mimeType
         self.statInfo = None
         self.description = None
-        self.fileSize = fileSize
+        self.fileSize = int(fileSize)
         self.md5Checksum = md5Checksum
-        self.path = misc.get('path')
+        self.path = misc['path']
 
         if isinstance(description, str):
             self.description = description
@@ -78,24 +82,16 @@ class SyncFileInfo(object):
 
     def __repr__(self):
         return """SyncFileInfo(
-    id="%s",
-    title="%s",
-    modifiedDate="%s",
-    mimeType="%s",
-    fileSize=%d",
-    md5Checksum=%s",
-    description="%s",
-    statInfo=%s
-)""" % (
-    self.id,
-    self.title,
-    self.modifiedDate,
-    self.mimeType,
-    self.fileSize,
-    self.md5Checksum,
-    self.description,
-    self.statInfo
-)
+    id = "%(id)s",
+    title = "%(title)s",
+    modifiedDate = "%(modifiedDate)s",
+    mimeType = "%(mimeType)s",
+    fileSize = %(fileSize)d,
+    md5Checksum = %(md5Checksum)s",
+    description = "%(description)s",
+    statInfo = %(statInfo)s,
+    path = %(path)s
+)""" % self.__dict__
 
 
 class SyncFile(object):
@@ -104,23 +100,20 @@ class SyncFile(object):
     bytesWritten = 0
 
     def __init__(self, path):
-        self.path = path
+        self._path = path
 
     def __str__(self):
-        return self.path
+        return self._path
 
     def __add__(self, path):
-        return os.path.join(self.path, path)
+        return self.getPath(path)
 
     def getPath(self, path = None):
-        if path is None:
-            path = self.path
-        else:
-            debug("Joining: %s with %s" % (self.path, path))
-            path = os.path.join(self.path, path)
-            debug("Got: %s" % path)
+        if path is None or path == "":
+            return self._path
 
-        return path
+        debug("Joining: '%s' with '%s'" % (self._path, path))
+        return os.path.join(self._path, path)
 
     def getUploader(self, path = None):
         raise ESyncFileAbstractMethod
@@ -164,6 +157,7 @@ class SyncFile(object):
         if src is None: return
 
         srcInfo = src.getInfo()
+        debug("srcInfo = %s" % srcInfo)
         srcStatInfo = srcInfo.statInfo
 
         mode, uid, gid, atime, mtime = None, None, None, None, None
@@ -199,14 +193,15 @@ class SyncFile(object):
     def _normaliseSource(self, src):
         srcPath, srcObj, srcInfo = None, None, None
 
-        debug("src = %s" % repr(src))
+        debug("src = %s" % str(src))
+        debug("type(src) = %s" % type(src))
 
         if src is not None:
             from libgsync.sync.file.factory import SyncFileFactory
 
             if isinstance(src, SyncFileInfo):
                 srcInfo = src
-                srcObj = SyncFileFactory.create(srcPath)
+                srcObj = SyncFileFactory.create(srcInfo.path)
                 srcPath = srcObj.path
 
             elif isinstance(src, SyncFile):
@@ -214,13 +209,15 @@ class SyncFile(object):
                 srcInfo = src.getInfo()
                 srcPath = src.path
 
-            elif isinstance(src, str):
+            elif isinstance(src, str) or isinstance(src, unicode):
                 srcPath = src
                 srcObj = SyncFileFactory.create(srcPath)
                 srcInfo = srcObj.getInfo()
 
             else:
-                raise EUnknownSourceType
+                raise EUnknownSourceType("%s is a %s" % (
+                    repr(src), type(src))
+                )
 
         debug("srcInfo = %s" % repr(srcInfo))
 
@@ -244,16 +241,15 @@ class SyncFile(object):
 
         self.__updateFile(path, srcObj)
 
-    def stripped(self):
-        return self.path
+    def normpath(self, path):
+        return os.path.normpath(path)
 
-    def relativeTo(self, path):
-        strippedPath = self.stripped()
+    def relativeTo(self, relpath):
+        path = self._path
+        if path[-1] != "/": path += "/"
 
-        if strippedPath == "/":
-            strippedPath = ""
+        expr = r'^%s+' % path
+        relpath = self.normpath(relpath)
 
-        expr = r'^%s/+' % strippedPath
-
-        debug("Creating relative path from %s and %s" % (expr, path))
-        return re.sub(expr, "", path)
+        debug("Creating relative path from %s and %s" % (expr, relpath))
+        return os.path.normpath(re.sub(expr, "", relpath + "/"))

@@ -21,6 +21,7 @@ setup(
         'httplib2',
         'json',
         'pickle',
+        'cPickle',
         'oauth2client',
         'urllib3',
     ],

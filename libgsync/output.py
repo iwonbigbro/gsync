@@ -20,7 +20,10 @@ class Channel():
 
 class Debug(Channel):
     def _print(self, msg):
-        self._printFrame(inspect.stack()[2], msg)
+        stack = inspect.stack()
+        indent = "".join([ " " for i in range(len(stack) - 2) ])
+
+        self._printFrame(stack[2], msg, indent)
 
     def _printFrame(self, frame, msg = None, indent = ""):
         (fr, f, l, fn, c, i) = frame

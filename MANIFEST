@@ -4,7 +4,6 @@
 /usr/local/lib/python2.7/dist-packages/libgsync/options.py
 /usr/local/lib/python2.7/dist-packages/libgsync/crawler.py
 /usr/local/lib/python2.7/dist-packages/libgsync/bind.py
-/usr/local/lib/python2.7/dist-packages/libgsync/config.py
 /usr/local/lib/python2.7/dist-packages/libgsync/drive/__init__.py
 /usr/local/lib/python2.7/dist-packages/libgsync/drive/mimetypes.py
 /usr/local/lib/python2.7/dist-packages/libgsync/drive/file.py
@@ -20,7 +19,6 @@
 /usr/local/lib/python2.7/dist-packages/libgsync/options.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/crawler.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/bind.pyc
-/usr/local/lib/python2.7/dist-packages/libgsync/config.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/drive/__init__.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/drive/mimetypes.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/drive/file.pyc

@@ -1,6 +1,10 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
-import os, sys, re, datetime
+import os, sys, re, datetime, shelve, time
+
+try: import simplejson as json
+except ImportError: import json
+
 from oauth2client.client import OAuth2Credentials
 from libgsync.output import verbose, debug
 from libgsync.drive.mimetypes import MimeTypes
@@ -34,7 +38,10 @@ class DriveFileObject(object):
         self.modifiedDate = datetime.datetime.now().isoformat()
 
         # Private
-        self._drive = Drive()
+        drive = Drive()
+        path = drive.normpath(path)
+
+        self._drive = drive
         self._path = path
         self._info = self._drive.stat(path)
         self._offset = 0
@@ -114,7 +121,7 @@ class DriveFileObject(object):
         if length is None:
             length = self._size - self._offset
 
-        if length >= self._size: return ""
+        if length <= 0: return ""
 
         url = service.files().get(
             fileId=self._info.id
@@ -146,77 +153,23 @@ class DriveFileObject(object):
 
         raise Exception("Not currently supported by Google Drive API v2")
 
-        # A rough implementation of how this is expected to work when append
-        # mode is eventually supported by Google Drive API.
-
-        service = self._drive.service()
-        http = service._http
-        http.follow_redirects = False 
-        length = len(data)
-
-        if length == 0: return
-
-        headers = {
-            'range': 'bytes=%d-%d' % ( 
-                self._offset,
-                self._offset + length
-            ) 
-        }
-
-        try:
-            if not self._info:
-                debug("Creating file metadata")
-                body = {
-                    'title': self._filename,
-                    'description': self.description,
-                    'mimeType': self._mimeType
-                }
-
-                #    'modifiedDate': str(self.modifiedDate),
-                if self._parentId:
-                    body['parents'] = [{ 'id': self._parentId }]
-
-                debug("body = %s" % body)
-                info = service.files().insert(
-                    body = body
-                ).execute()
-
-                if info is None:
-                    raise Exception("Insert failed")
-
-                self._info = DriveFile(**info)
-
-            debug(self._info._dict)
-        except Exception, e:
-            debug.exception()
-            debug("Exception: %s" % str(e))
-            return
-
-        service.files().update(
-            fileId = self._info.id
-            # TODO: Some sort of chunk.
-        ).execute()
-
-        if res.status in [ 301, 302, 303, 307, 308 ] and 'location' in res: 
-            url = res['location'] 
-            res, data = http.request(url, headers=headers) 
-
-        if res.status in [ 200, 206 ]:
-            self._offset += length
-
 
 class _Drive():
-    _credentials = None
-    _service = None
-    _credentialStorage = None
-    _gcache = {}
-    _pcache = {}
-
     def __init__(self):
         debug("Initialising drive")
 
         self._service = None
         self._http = None
+        self._credentials = None
+        self._service = None
+        self._credentialStorage = None
+        
+        # Load Google Drive local cache
+        cfg = self._getConfigFile("drive.v2.gcache")
+        self._gcache = shelve.open(cfg)
+
+        cfg = self._getConfigFile("drive.v2.pcache")
+        self._pcache = shelve.open(cfg)
 
         debug("Initialisation complete")
 
@@ -240,20 +193,17 @@ class _Drive():
         )
 
         debug("Loading Google Drive service from config")
-        from libgsync.config import Data
+
         cfg = self._getConfigFile("drive.v2.service")
-        ds = Data(cfg, encoder="json")
-        ds.load()
-        info = ds.get()
-        content = None
+        api = shelve.open(cfg)
+        apistr = None
+        now = int(time.time())
 
         from apiclient.discovery import build_from_document, DISCOVERY_URI
-        import time
+        if now < int(api.get('expires', 0)):
+            apistr = json.dumps(dict(api))
 
-        if info and int(time.time()) < int(info.get('expires', 0)):
-            content = str(ds)
-
-        if not content:
+        if not apistr:
             debug("Downloading API service")
 
             import uritemplate
@@ -263,28 +213,39 @@ class _Drive():
             })
             res, content = http.request(url)
 
-            if not res.status in [ 200, 202 ]:
-                return None
+            if res.status in [ 200, 202 ]:
+                # API expires after 24 hours.
+                apistr = content
+                api.update(json.loads(apistr))
+                api['expires'] = int(time.time()) + 86400
 
-            ds.set(content)
+        api.close()
 
-            # API expires after 24 hours.
-            info = ds.get()
-            info['expires'] = int(time.time()) + 86400
-            ds.save(info)
+        if not apistr:
+            return None
 
         debug("Building Google Drive service from document")
-        self._service = build_from_document(content,
-            http = http, base = DISCOVERY_URI)
+        self._service = build_from_document(
+            apistr, http = http, base = DISCOVERY_URI
+        )
 
         return self._service
 
     def __del__(self):
+        debug("Saving credentials...")
         credentials = self._credentials
         if credentials:
             storage = self._getCredentialStorage()
             if storage is not None:
                 storage.put(credentials)
+
+        debug("Saving gcache (%d items)..." % len(self._gcache))
+        self._gcache.close()
+
+        debug("Saving pcache (%d items)..." % len(self._pcache))
+        self._pcache.close()
+
+        debug("My pid = %d" % os.getpid())
 
     def _getConfigDir(self, subdir = None):
         homedir = os.getenv('HOME', '~')
@@ -360,18 +321,21 @@ class _Drive():
 
     def walk(self, top, topdown = True, onerror = None, followlinks = False):
         join = os.path.join
+        names = None
 
         debug("Walking: %s" % top)
 
         try:
             names = self.listdir(top)
         except Exception, e:
+            debug.exception()
             debug("Exception: %s" % str(e))
 
             if onerror is not None:
                 onerror(e)
             return
 
+        debug("Separating directories from files...")
         dirs, nondirs = [], []
         for name in names:
             if self.isdir(join(top, name)):
@@ -382,92 +346,136 @@ class _Drive():
         if topdown:
             yield top, dirs, nondirs
 
+        debug("Iterating directories...")
         for name in dirs:
             new_path = join(top, name)
             for x in self.walk(new_path, topdown, onerror, followlinks):
                 yield x
 
+        debug("Yeilding on non-directories...")
         if not topdown:
             yield top, dirs, nondirs
 
+    def is_rootpath(self, path):
+        return bool(re.search(r'^drive:/+$', path) is not None)
+
+    def is_drivepath(self, path):
+        return bool(re.search(r'^drive:/+', path) is not None)
+
+    def validatepath(self, path):
+        if not self.is_drivepath(path):
+            raise ValueError("Invalid path: %s" % path)
+
+    def strippath(self, path):
+        return re.sub(r'^(?:drive:/*|/+)', '/', os.path.normpath(path))
+
+    def normpath(self, path):
+        return re.sub(r'^(?:drive:/*|/+)', 'drive://', os.path.normpath(path))
 
     def pathlist(self, path):
+        self.validatepath(path)
+
         pathlist = []
+        path = self.strippath(path)
+
         while True:
             path, folder = os.path.split(path)
             if folder != "":
                 pathlist.insert(0, folder)
             elif path != "":
-                pathlist.insert(0, path)
+                pathlist.insert(0, self.normpath(path))
                 break
 
         return pathlist
 
+    def _findEntity(self, name, ents):
+        debug("Iterating %d entities to find %s" % (len(ents), name))
+        for ent in ents:
+            entname = ent.get('title', "")
+
+            if name == entname:
+                debug("Found %s" % name)
+                return ent
+
+        return None
 
     def stat(self, path):
-        path = re.sub(r'^drive://+', "/", path)
-
-        if path[0] != '/':
-            raise EFileNotFound(path)
+        self.validatepath(path)
+        path = self.normpath(path)
 
         # If it is cached, we can obtain it there.
-        pcache = self._pcache
-        ent = pcache.get(path, None)
+        ent = self._pcache.get(str(path))
         if ent is not None:
-            debug("Loading from path cache: %s" % path)
+            debug("Found path in path cache: %s" % path)
+            return DriveFile(path = path, **ent)
+
+        # First list root and walk to the requested file from there.
+        ent = DriveFile(
+            path = self.normpath('/'),
+            id = 'root',
+            title = '/',
+            mimeType = MimeTypes.FOLDER
+        )
+
+        # User has requested root directory
+        if self.is_rootpath(path):
+            debug("Path is root: %s" % path)
             return ent
-
-        if path == "/":
-            # User has requested root directory
-            return DriveFile(id='root', title='/', mimeType=MimeTypes.FOLDER)
-        else:
-            # First list root and walk to the requested file from there.
-            ents = self._query(parentId = 'root')
-
-        if len(ents) == 0:
-            raise EFileNotFound(path)
 
         # Break down the path and enumerate each folder.
         # Walk the path until we find the file we are looking for.
         paths = self.pathlist(path)
-        pathlen = len(paths)
+        pathslen = len(paths)
 
-        for i in xrange(1, pathlen):
+        debug("Got %d paths from pathlist(%s)" % (pathslen, path))
+        debug("Got paths: %s" % paths)
+
+        for i in xrange(1, pathslen):
             searchpath = os.path.join(*paths[:i])
-            searchdir = paths[i]
-            found = False
+            searchname = paths[i]
+            search = str(os.path.join(searchpath, searchname))
 
-            debug("Searching for %s in path %s" % (searchdir, searchpath))
+            debug("Searching for %s in path %s" % (searchname, searchpath))
 
-            for ent in ents:
-                ent = DriveFile(**ent)
-                entname = ent.title
-                entpath = os.path.join(searchpath, entname)
+            # First check our cache to see if we already have it.
+            parentId = str(ent['id'])
+            ent = self._pcache.get(search)
+            if ent is None:
+                ents = self._query(parentId = parentId)
 
-                # Update path based cache.
-                if pcache.get(entpath) is None:
-                    debug("Updating path cache: %s" % entpath)
-                    pcache[entpath] = ent
+                debug("Got %d entities back" % len(ents))
 
-                if searchdir == entname:
-                    found = True
-                    if i == pathlen: return ent
+                if len(ents) == 0:
+                    raise EFileNotFound(path)
 
-                    ents = self._query(parentId = str(ent.id))
-                    break
+                ent = self._findEntity(searchname, ents)
 
-            # endfor
-            if not found: break
+            if ent is None:
+                raise EFileNotFound(path)
 
-        #endfor
-        return None
+            # Update path cache.
+            if self._pcache.get(search) is None:
+                debug("Updating path cache: %s" % search)
+                self._pcache[search] = ent
+
+            if search == path:
+                debug("Found %s in path cache" % search)
+                return DriveFile(path = path, **ent)
+
+        # Finally, couldn't find anything, raise an error.
+        raise EFileNotFound(path)
 
     def rm(self, path, recursive=False):
         pass
     
     def mkdir(self, path):
+        self.validatepath(path)
+
+        path = self.strippath(path)
+        normpath = self.normpath(path)
+
         try:
-            dirname, basename = os.path.split(path)
+            dirname, basename = os.path.split(normpath)
             if dirname == "/":
                 parentId = "root"
             else:
@@ -475,17 +483,17 @@ class _Drive():
                 debug("Failed to stat directory: %s" % dirname)
 
                 if not parent:
-                    if path != dirname:
+                    if normpath != dirname:
                         parent = self.mkdir(dirname)
 
                     if not parent:
-                        debug("Failed to create parent: %s" % path)
+                        debug("Failed to create parent: %s" % dirname)
                         return None
 
                 debug("Got parent: %s" % repr(parent))
                 parentId = parent.id
 
-            debug("Creating directory: %s" % path)
+            debug("Creating directory: %s" % normpath)
  
             info = self.service().files().insert(
                 body = {
@@ -496,8 +504,8 @@ class _Drive():
             ).execute()
 
             if info:
-                ent = DriveFile(**info)
-                self._pcache[path] = ent
+                self._pcache[path] = info
+                ent = DriveFile(path = normpath, **info)
                 return ent
         except Exception, e:
             debug.exception()
@@ -514,13 +522,11 @@ class _Drive():
     
     def listdir(self, path):
         ent = self.stat(path)
-        if ent is None:
-            return None
+        ents = self._query(parentId = str(ent.id))
 
         names = []
-        ents = self._query(parentId = str(ent.id))
         for ent in ents:
-            names.append(ent.title)
+            names.append(ent['title'])
 
         return names
 
@@ -563,19 +569,19 @@ class _Drive():
 
             files = service.files().list(**param).execute()
 
+            debug("Query returned %d files" % len(files))
+
             ents.extend(files['items'])
             page_token = files.get('nextPageToken')
 
             if not page_token: break
 
-        debug("Updating google cache: %s" % parentId)
+        debug("Updating google cache: %s (%d items)" % (parentId, len(ents)))
         self._gcache[parentId] = ents
 
-        # Normalise
-        for ent in ents:
-            result.append(DriveFile(**ent))
+        debug("My pid = %d" % os.getpid())
 
-        return result
+        return ents
 
 # The fake Drive() constructor and global drive instance.
 g_drive = None

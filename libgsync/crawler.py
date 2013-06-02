@@ -1,29 +1,39 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
 import os, re, sys
-from multiprocessing import Process
+from threading import Thread
 from libgsync.sync import Sync
 from libgsync.output import verbose, debug
 from libgsync.options import GsyncOptions
+from libgsync.drive import Drive
+from libgsync.bind import bind
 
-class Crawler(Process):
-    _dev = None
-    _drive = None
-    _src = None
-    _dst = None
-
+class Crawler(Thread):
     def __init__(self, src, dst):
-        self._dst = dst
-        self._src = src
+        self._dev = None
+        self._src = None
+        self._dst = None
 
-        if re.search(r'^drive://+', src) is None:
+        self._drive = Drive()
+
+        if self._drive.is_drivepath(src):
+            self._walkCallback = bind("walk", self._drive)
+            self._src = self._drive.normpath(src)
+        else:
+            self._walkCallback = os.walk
+            self._src = os.path.normpath(src)
             st_info = os.stat(self._src)
 
             if GsyncOptions.one_file_system:
                 self._dev = st_info.st_dev
+
+        if self._drive.is_drivepath(dst):
+            self._dst = self._drive.normpath(dst)
         else:
-            from libgsync.drive import Drive
-            self._drive = Drive()
+            self._dst = os.path.normpath(dst)
+
+        if src[-1] == "/": self._src += "/"
+        if dst[-1] == "/": self._dst += "/"
 
         super(Crawler, self).__init__(name = "Crawler: %s" % src)
     
@@ -68,17 +78,11 @@ class Crawler(Process):
 
     def run(self):
         srcpath = self._src
-        generator = None
-        prefix = ""
-
-        srcpath = re.sub(r'^drive://+', "/", srcpath)
-        if srcpath != self._src:
-            prefix = "drive://"
-
         basepath, path = os.path.split(srcpath)
-        basepath = prefix + basepath
 
-        debug("Source prefix: %s" % prefix)
+        if self._drive.is_drivepath(self._src):
+            basepath = self._drive.normpath(basepath)
+
         debug("Source srcpath: %s" % srcpath)
         debug("Source basepath: %s" % basepath)
         debug("Source path: %s" % path)
@@ -92,14 +96,13 @@ class Crawler(Process):
         debug("Enumerating: %s" % srcpath)
 
         try:
-            if self._drive is None:
-                self._walk(srcpath, os.walk, self._dev)
-            else:
-                from libgsync.bind import bind
-                self._walk(srcpath, bind("walk", self._drive), None)
+            self._walk(srcpath, self._walkCallback, self._dev)
+        except KeyboardInterrupt:
+            print("Terminating...")
+            pass
         except Exception, e:
-            print("Error: %s" % str(e))
             debug.exception(e)
+            print("Error: %s" % str(e))
 
         verbose("sent %d bytes  received %d bytes  %.2f bytes/sec" % (
             self._sync.totalBytesSent,

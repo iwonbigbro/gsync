@@ -4,10 +4,15 @@ import os, re
 from libgsync.output import verbose, debug, itemize
 from libgsync.sync.file import SyncFile, SyncFileInfo
 from apiclient.http import MediaIoBaseUpload
+from libgsync.drive import Drive
 
 class SyncFileRemote(SyncFile):
-    def stripped(self):
-        return re.sub(r'^drive://+', "/", self.path)
+    def __init__(self, path):
+        super(SyncFileRemote, self).__init__(path)
+        self._path = self.normpath(path)
+
+    def normpath(self, path):
+        return Drive().normpath(path)
 
     def getUploader(self, path = None):
         info = self.getInfo(path)
@@ -15,9 +20,9 @@ class SyncFileRemote(SyncFile):
             raise Exception("Could not obtain file information: %s" % path)
 
         path = self.getPath(path)
-
-        from libgsync.drive import Drive
         drive = Drive()
+
+        debug("Opening remote file for reading: %s" % path)
 
         f = drive.open(path, "r")
         if f is None:
@@ -40,7 +45,7 @@ class SyncFileRemote(SyncFile):
             return None
 
         debug("Remote file metadata = %s" % str(info))
-        info = SyncFileInfo(info)
+        info = SyncFileInfo(**info)
         debug("Remote mtime: %s" % info.modifiedDate)
 
         return info

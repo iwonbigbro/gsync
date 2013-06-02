@@ -108,14 +108,14 @@ class Sync(object):
                 changes[0] = '>'
 
         if create:
-            self.dst.create(dstPath, path)
+            self.dst.create(dstPath, srcFile)
 
         elif GsyncOptions.ignore_existing:
             debug("File exists on the receiver, skipping: %s" % path)
             return None
 
         else:
-            self.dst.update(dstPath, path)
+            self.dst.update(dstPath, srcFile)
 
         self.totalBytesSent += self.dst.bytesWritten
         self.totalBytesReceived += self.dst.bytesRead

@@ -122,6 +122,8 @@ class SyncFileLocal(SyncFile):
             while bytesWritten < fileSize:
                 chunk = uploader.getbytes(bytesWritten, chunkSize)
 
+                debug("len(chunk) = %d" % len(chunk))
+
                 if not chunk: break
                 if f is not None: f.write(chunk)
 
@@ -136,5 +138,6 @@ class SyncFileLocal(SyncFile):
                 ))
         except Exception, e:
             debug("Write failed: %s" % str(e))
+            raise
         finally:
             if f is not None: f.close()
