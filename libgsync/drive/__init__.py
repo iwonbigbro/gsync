@@ -10,6 +10,11 @@ from libgsync.output import verbose, debug
 from libgsync.drive.mimetypes import MimeTypes
 from libgsync.drive.file import DriveFile
 
+if debug.enabled():
+    import logging
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+
 class ENoTTY(Exception):
     pass
 
@@ -188,6 +193,10 @@ class _Drive():
 
         debug("Authenticating")
         import httplib2
+
+        if debug.enabled():
+            httplib2.debuglevel = 4
+
         http = credentials.authorize(
             httplib2.Http(cache = self._getConfigDir("http_cache"))
         )
@@ -202,6 +211,8 @@ class _Drive():
         from apiclient.discovery import build_from_document, DISCOVERY_URI
         if now < int(api.get('expires', 0)):
             apistr = json.dumps(dict(api))
+        else:
+            debug("API has expired")
 
         if not apistr:
             debug("Downloading API service")
@@ -214,10 +225,10 @@ class _Drive():
             res, content = http.request(url)
 
             if res.status in [ 200, 202 ]:
-                # API expires after 24 hours.
+                # API expires every minute.
                 apistr = content
                 api.update(json.loads(apistr))
-                api['expires'] = int(time.time()) + 86400
+                api['expires'] = int(time.time()) + 60
 
         api.close()
 
@@ -405,7 +416,8 @@ class _Drive():
 
         # If it is cached, we can obtain it there.
         ent = self._pcache.get(str(path))
-        if ent is not None:
+        # TODO: Disable cache
+        if False and ent is not None:
             debug("Found path in path cache: %s" % path)
             return DriveFile(path = path, **ent)
 
@@ -439,19 +451,20 @@ class _Drive():
 
             # First check our cache to see if we already have it.
             parentId = str(ent['id'])
-            ent = self._pcache.get(search)
+            # TODO: Disable cache
+            #ent = self._pcache.get(search)
+            ent = None
             if ent is None:
                 ents = self._query(parentId = parentId)
 
                 debug("Got %d entities back" % len(ents))
 
-                if len(ents) == 0:
-                    raise EFileNotFound(path)
+                if len(ents) == 0: return None
 
                 ent = self._findEntity(searchname, ents)
 
             if ent is None:
-                raise EFileNotFound(path)
+                return None
 
             # Update path cache.
             if self._pcache.get(search) is None:
@@ -459,11 +472,14 @@ class _Drive():
                 self._pcache[search] = ent
 
             if search == path:
-                debug("Found %s in path cache" % search)
-                return DriveFile(path = path, **ent)
+                debug("Found %s" % search)
+                debug(" * ent: %s" % ent)
+                df = DriveFile(path = path, **ent)
+                debug(" * returning %s" % df)
+                return df
 
         # Finally, couldn't find anything, raise an error.
-        raise EFileNotFound(path)
+        return None
 
     def rm(self, path, recursive=False):
         pass
@@ -533,6 +549,114 @@ class _Drive():
     def open(self, path, mode = "r"):
         return DriveFileObject(path, mode)
 
+    def delete(self, path, skipTrash = False):
+        info = self.stat(path)
+        if info is None: return None
+
+        try:
+            if skipTrash:
+                debug("Deleting: %s (id: %s)" % (path, info.id))
+                return self.service().files().delete(
+                    fileId = info.id
+                ).execute()
+            else:
+                debug("Trashing: %s (id: %s)" % (path, info.id))
+                self.service().files().trash(
+                    fileId = info.id
+                ).execute()
+        except Exception, e:
+            debug("Deltion failed: %s" % str(e))
+
+        self._clearCache(path)
+
+    def create(self, path, properties):
+        # Get the parent directory.
+        dirname, basename = os.path.split(path)
+        info = self.stat(dirname)
+        if info is None: return None
+
+        parentId = info.id
+
+        # Get the file info and delete existing file.
+        info = self.stat(path)
+        if info is not None:
+            self.delete(path)
+
+        body = {}
+        for k, v in properties.iteritems():
+            body[k] = str(v)
+
+        if parentId:
+            body['parents'] = [{'id': parentId}]
+
+        try:
+            ent = self.service().files().insert(
+                body = body,
+                media_body = ""
+            ).execute()
+
+            # Clear the cache and update the path cache
+            self._clearCache(path)
+            self._pcache[path] = ent
+
+            return ent
+        except Exception, e:
+            debug("Creation failed: %s" % str(e))
+
+        return None
+
+    def update(self, path, properties, media_body = None):
+        info = self.stat(path)
+
+        if not info:
+            debug("No such file: %s" % path)
+            return None
+
+        debug("Updating: %s" % info)
+
+        # Merge properties
+        for k, v in properties.iteritems():
+            # Do not update the ID, always use the path obtained ID.
+            if k == 'id': continue
+
+            debug(" * with: %s = %s" % (k, v))
+            setattr(info, k, v)
+
+        try:
+            return self.service().files().update(
+                fileId = info.id,
+                body = info.dict(),
+                newRevision = True,
+                media_body = media_body
+            ).execute()
+        except Exception, e:
+            debug("Update failed: %s" % str(e))
+            debug.stack()
+            return None
+    
+    def _clearCache(self, path):
+        debug("Clearing path cache entries...")
+        if self._pcache.get(path):
+            debug("    * delting: %s" % path)
+            del self._pcache[path]
+
+        info = self.stat(path)
+        if info is None: return
+
+        strInfoId = str(info.id)
+
+        debug("Clearing Google cache entries...")
+        if self._gcache.get(strInfoId):
+            debug("    * delting: %s" % strInfoId)
+            del self._gcache[strInfoId]
+
+        # Parent cache must also be cleared
+        for p in info.parents:
+            pid = str(p['id'])
+            if self._gcache.get(pid):
+                debug("    * delting: %s" % pid)
+                del self._gcache[pid]
+
     def _query(self, **kwargs):
         parentId = kwargs.get("parentId")
         mimeType = kwargs.get("mimeType")
@@ -541,7 +665,7 @@ class _Drive():
 
         if parentId is not None:
             cached = self._gcache.get(parentId, None)
-            if cached is not None:
+            if False and cached is not None:
                 result.extend(cached)
                 return result
 

@@ -5,7 +5,7 @@ from libgsync.output import verbose, debug, itemize
 from libgsync.drive.mimetypes import MimeTypes
 from libgsync.sync.file import SyncFile, SyncFileInfo
 from libgsync.options import GsyncOptions
-from apiclient.http import MediaIoBaseUpload
+from apiclient.http import MediaFileUpload
 
 class SyncFileLocal(SyncFile):
     def getUploader(self, path = None):
@@ -18,8 +18,11 @@ class SyncFileLocal(SyncFile):
         f = open(path, "r")
         if f is None:
             raise Exception("Open failed: %s" % path)
+        f.close()
 
-        return MediaIoBaseUpload(f, info.mimeType, resumable=True)
+        return MediaFileUpload(
+            path, mimetype = info.mimeType, resumable = True
+        )
 
     def getInfo(self, path = None):
         path = self.getPath(path)
@@ -34,7 +37,7 @@ class SyncFileLocal(SyncFile):
             if os.path.isdir(path):
                 mimeType = MimeTypes.FOLDER
             else:
-                mimeType = MimeTypes.NONE
+                mimeType = MimeTypes.get(path)
 
             info = SyncFileInfo(
                 None,
@@ -57,6 +60,8 @@ class SyncFileLocal(SyncFile):
         return info
 
     def _updateStats(self, path, src, mode, uid, gid, mtime, atime):
+        debug("Updating local file stats: %s" % path)
+
         if GsyncOptions.dry_run: return
 
         if uid is not None:
@@ -85,13 +90,11 @@ class SyncFileLocal(SyncFile):
         if not GsyncOptions.dry_run:
             os.mkdir(path)
 
-    def _updateDir(self, path, src):
-        debug("Updating local directory: %s" % path)
-
     def _createFile(self, path, src):
         path = self.getPath(path)
 
         debug("Creating local file: %s" % path)
+        debug.stack()
 
         f = None
         try:

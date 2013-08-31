@@ -1,6 +1,7 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
 import os, datetime, time, posix, dateutil.parser, re
+from dateutil.tz import tzutc
 
 try: import cPickle as pickle
 except Exception: import pickle
@@ -12,8 +13,23 @@ from libgsync.options import GsyncOptions
 class EUnknownSourceType(Exception):
     pass
 
+class ESyncFileAbstractMethod(Exception):
+    pass
+
+class EInvalidStatInfoType(Exception):
+    def __init__(self, stype):
+        self.statInfoType = stype
+
+    def __str__(self):
+        return "Invalid stat info type: %s" % self.statInfoType
+
+
 class SyncFileInfoDatetime(object):
-    __epoch = datetime.datetime(1970, 1, 1)
+    __epoch = dateutil.parser.parse(
+        "Thu, 01 Jan 1970 00:00:00 +0000",
+        ignoretz=True
+    ).replace(tzinfo = tzutc())
+    __d = None
 
     def __(self, d):
         if isinstance(d, SyncFileInfoDatetime):
@@ -22,8 +38,9 @@ class SyncFileInfoDatetime(object):
             return d
 
     def __init__(self, datestring):
-        self.__d = dateutil.parser.parse(datestring, ignoretz=True)
-        
+        d = dateutil.parser.parse(datestring, ignoretz=True)
+        self.__d = d.replace(tzinfo = tzutc())
+
     def __getattr__(self, name):
         try:
             return self.__dict__[name]
@@ -31,7 +48,7 @@ class SyncFileInfoDatetime(object):
             return getattr(self.__d, name)
 
     def __repr__(self): return "SyncFileInfoDatetime('%s')" % str(self)
-    def __str__(self): return self.__d.isoformat()
+    def __str__(self): return self.__d.strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
     def __secs(self): return (self.__d - self.__epoch).total_seconds()
     def __int__(self): return int(self.__secs())
     def __long__(self): return long(self.__secs())
@@ -47,6 +64,8 @@ class SyncFileInfoDatetime(object):
 
 
 class SyncFileInfo(object):
+    _dict = None
+
     # Note: The description field is currently overloaded to also provide
     #       custom metadata tags that currently aren't facilitated by Google
     #       Drive.
@@ -54,31 +73,43 @@ class SyncFileInfo(object):
                  description = None, fileSize = 0, md5Checksum = "",
                  **misc):
 
-        self.id = id
-        self.title = title
-        self.modifiedDate = SyncFileInfoDatetime(modifiedDate)
-        self.mimeType = mimeType
-        self.statInfo = None
-        self.description = None
-        self.fileSize = int(fileSize)
-        self.md5Checksum = md5Checksum
-        self.path = misc['path']
+        self._dict = {
+            'id': id,
+            'title': title,
+            'modifiedDate': SyncFileInfoDatetime(modifiedDate),
+            'mimeType': mimeType,
+            'description': description,
+            'statInfo': None,
+            'fileSize': int(fileSize),
+            'md5Checksum': md5Checksum,
+            'path': misc['path']
+        }
 
-        if isinstance(description, str):
-            self.description = description
-            try:
-                self.statInfo = pickle.loads(description.decode("hex"))
-            except pickle.UnpicklingError:
-                pass
-            except EOFError:
-                pass
+        self._setStatInfo(description)
 
-        elif isinstance(description, posix.stat_result):
-            self.statInfo = description
-            try:
-                self.description = pickle.dumps(description).encode("hex")
-            except pickle.PicklingError:
-                pass
+    def iteritems(self): return self._dict.iteritems()
+    def values(self): return self._dict.values()
+    def keys(self): return self._dict.keys()
+    def items(self): return self._dict.items()
+
+    def __getattr__(self, name):
+        return self._dict[name]
+
+    def __setattr__(self, name, value):
+        if name == "_dict":
+            object.__setattr__(self, name, value)
+            return
+
+        if name in [ "description", "statInfo" ]:
+            self._setStatInfo(value)
+            return
+
+        debug("Setting: %s = %s" % (name, str(value)))
+
+        self._dict[name] = value
+
+    def __getitem__(self, name):
+        return self._dict[name]
 
     def __repr__(self):
         return """SyncFileInfo(
@@ -91,7 +122,49 @@ class SyncFileInfo(object):
     description = "%(description)s",
     statInfo = %(statInfo)s,
     path = %(path)s
-)""" % self.__dict__
+)""" % self._dict
+
+    def _setStatInfo(self, value):
+        if value is None:
+            value = (0,0,0,0,0,0,0,0,0,0)
+
+        if isinstance(value, tuple) or isinstance(value, list):
+            value = posix.stat_result(tuple(value))
+            self._dict['statInfo'] = value
+            self._dict['description'] = pickle.dumps(
+                value
+            ).encode("hex")
+
+            return
+            
+        if isinstance(value, posix.stat_result):
+            try:
+                self._dict['description'] = pickle.dumps(
+                    value
+                ).encode("hex")
+                self._dict['statInfo'] = value
+            except pickle.PicklingError:
+                pass
+
+            return
+
+        if isinstance(value, unicode):
+            value = str(value)
+
+        if isinstance(value, str):
+            try:
+                self._dict['statInfo'] = pickle.loads(
+                    value.decode("hex")
+                )
+                self._dict['description'] = value
+            except pickle.UnpicklingError:
+                pass
+            except EOFError:
+                pass
+
+            return
+
+        raise EInvalidStatInfoType(type(value))
 
 
 class SyncFile(object):
@@ -162,19 +235,19 @@ class SyncFile(object):
 
         mode, uid, gid, atime, mtime = None, None, None, None, None
 
-        if GsyncOptions.perms:
-            if srcStatInfo is not None:
+        if srcStatInfo is not None:
+            if GsyncOptions.perms:
                 mode = srcStatInfo.st_mode
 
-        if GsyncOptions.owner:
-            uid = srcStatInfo.st_uid
-            if uid is not None:
-                debug("Updating with uid: %d" % uid)
+            if GsyncOptions.owner:
+                uid = srcStatInfo.st_uid
+                if uid is not None:
+                    debug("Updating with uid: %d" % uid)
 
-        if GsyncOptions.group:
-            gid = srcStatInfo.st_gid
-            if gid is not None:
-                debug("Updating with gid: %d" % gid)
+            if GsyncOptions.group:
+                gid = srcStatInfo.st_gid
+                if gid is not None:
+                    debug("Updating with gid: %d" % gid)
 
         if GsyncOptions.times:
             if srcStatInfo is not None:

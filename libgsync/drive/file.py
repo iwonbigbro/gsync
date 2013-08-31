@@ -1,6 +1,8 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
 class DriveFile(object):
+    _dict = None
+
     def __init__(self, **kwargs):
         self._dict = dict(kwargs.items())
 
@@ -8,6 +10,7 @@ class DriveFile(object):
     def values(self): return self._dict.values()
     def items(self): return self._dict.items()
     def iteritems(self): return self._dict.iteritems()
+    def dict(self): return dict(self.items())
 
     def __getattr__(self, key):
         return self._dict.get(key, self.__dict__.get(key))
@@ -16,6 +19,6 @@ class DriveFile(object):
         return self._dict[key]
 
     def __repr__(self):
-        return "<DriveFile object 'id=%s, title=%s'>" % (
-            self.id, self.title
-        )
+        return u"<DriveFile object '%s'>" % u" ".join([
+            u"%s=%s " % (k, v) for k, v in self._dict.iteritems()
+        ])

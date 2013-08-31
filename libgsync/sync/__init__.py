@@ -53,6 +53,14 @@ class Sync(object):
         update = False
         folder = bool(srcFile.mimeType == MimeTypes.FOLDER)
 
+        if dstFile is None:
+            debug("File not found: %s" % dstPath)
+        elif dstFile.mimeType != srcFile.mimeType:
+            debug("Destination mimetype(%s) != source mimetype(%s)" % (
+                dstFile.mimeType, srcFile.mimeType
+            ))
+
+
         if dstFile is None or dstFile.mimeType != srcFile.mimeType:
             changes = bytearray(">++++++++++")
             create = True
@@ -86,8 +94,8 @@ class Sync(object):
                     return None
 
                 debug("File timestamp mismatch: %s" % path)
-                debug("    source mtime:      %d" % srcFile.modifiedDate)
-                debug("    destination mtime: %d" % dstFile.modifiedDate)
+                debug("    source mtime:      %d" % int(srcFile.modifiedDate))
+                debug("    destination mtime: %d" % int(dstFile.modifiedDate))
                 changes[4] = 'T'
                 update = True
 

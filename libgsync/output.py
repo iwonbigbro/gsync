@@ -10,6 +10,9 @@ class Channel():
             self._priority = 0
         self._priority += 1
 
+    def enabled(self):
+        return self._priority > 0
+
     def __call__(self, msg, priority = 1):
         if self._priority >= priority:
             self._print(msg)
