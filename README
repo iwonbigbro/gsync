@@ -41,4 +41,9 @@ Issues:
 
  * Append mode doesn't work, this is not supported by Google Drive.
  
+ * Trashed directories still retain all existing parents, but are hidden by the
+   Google Drive web client.  This means that deleting a directory will result in
+   files being synchronised with the trashed directory, until it is emptied from
+   trash.  A fix is required to check directories are not children of 'Trash'.
+ 
  * Some features still not implemented.
