@@ -169,12 +169,13 @@ class _Drive():
         self._service = None
         self._credentialStorage = None
         
-        # Load Google Drive local cache
+        # Load Google Drive local cache (currently disabled)
         cfg = self._getConfigFile("drive.v2.gcache")
-        self._gcache = shelve.open(cfg)
+        self._gcache = shelve.open(cfg, flag = 'n')
 
+        # Load parent folder cache (currently disabled)
         cfg = self._getConfigFile("drive.v2.pcache")
-        self._pcache = shelve.open(cfg)
+        self._pcache = shelve.open(cfg, flag = 'n')
 
         debug("Initialisation complete")
 
@@ -415,9 +416,10 @@ class _Drive():
         path = self.normpath(path)
 
         # If it is cached, we can obtain it there.
+        debug("Checking pcache for path: %s" % path)
         ent = self._pcache.get(str(path))
-        # TODO: Disable cache
-        if False and ent is not None:
+
+        if ent is not None:
             debug("Found path in path cache: %s" % path)
             return DriveFile(path = path, **ent)
 
@@ -451,10 +453,11 @@ class _Drive():
 
             # First check our cache to see if we already have it.
             parentId = str(ent['id'])
-            # TODO: Disable cache
-            #ent = self._pcache.get(search)
-            ent = None
+
+            debug("Checking pcache for path: %s" % search)
+            ent = self._pcache.get(search)
             if ent is None:
+                debug(" * nothing found")
                 ents = self._query(parentId = parentId)
 
                 debug("Got %d entities back" % len(ents))
@@ -485,14 +488,20 @@ class _Drive():
         pass
     
     def mkdir(self, path):
+        debug("path = %s" % path)
+
         self.validatepath(path)
 
-        path = self.strippath(path)
-        normpath = self.normpath(path)
+        spath = self.strippath(path)
+        normpath = self.normpath(spath)
+
+        debug("spath = %s" % spath)
+        debug("normpath = %s" % normpath)
 
         try:
             dirname, basename = os.path.split(normpath)
-            if dirname == "/":
+            debug("dirname = '%s', basename = '%s'" % (dirname, basename))
+            if dirname in [ "/", "drive:" ]:
                 parentId = "root"
             else:
                 parent = self.stat(dirname)
@@ -520,6 +529,7 @@ class _Drive():
             ).execute()
 
             if info:
+                self._clearCache(path)
                 self._pcache[path] = info
                 ent = DriveFile(path = normpath, **info)
                 return ent
@@ -527,7 +537,7 @@ class _Drive():
             debug.exception()
             debug("Failed to create directory: %s" % str(e))
 
-        return None
+        raise IOError("Failed to create directory: %s" % path)
 
     def isdir(self, path):
         ent = self.stat(path)
@@ -551,12 +561,12 @@ class _Drive():
 
     def delete(self, path, skipTrash = False):
         info = self.stat(path)
-        if info is None: return None
+        if info is None: return
 
         try:
             if skipTrash:
                 debug("Deleting: %s (id: %s)" % (path, info.id))
-                return self.service().files().delete(
+                self.service().files().delete(
                     fileId = info.id
                 ).execute()
             else:
@@ -635,7 +645,7 @@ class _Drive():
             return None
     
     def _clearCache(self, path):
-        debug("Clearing path cache entries...")
+        debug("Clearing path cache entries for '%s'..." % path)
         if self._pcache.get(path):
             debug("    * delting: %s" % path)
             del self._pcache[path]
@@ -664,8 +674,10 @@ class _Drive():
         result = []
 
         if parentId is not None:
+            debug("Checking gcache for parentId: %s" % parentId)
             cached = self._gcache.get(parentId, None)
-            if False and cached is not None:
+
+            if cached is not None:
                 result.extend(cached)
                 return result
 

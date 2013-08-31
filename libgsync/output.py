@@ -2,7 +2,7 @@
 
 import sys, inspect, re
 
-class Channel():
+class Channel(object):
     _priority = -1 
 
     def enable(self):
@@ -14,15 +14,15 @@ class Channel():
         return self._priority > 0
 
     def __call__(self, msg, priority = 1):
-        if self._priority >= priority:
-            self._print(msg)
+        self._print(msg, priority)
 
-    def _print(self, msg):
-        sys.stdout.write("%s\n" % msg)
+    def _print(self, msg, priority = 1):
+        if self._priority >= priority:
+            sys.stdout.write("%s\n" % msg)
 
 
 class Debug(Channel):
-    def _print(self, msg):
+    def _print(self, msg, priority = 1):
         stack = inspect.stack()
         indent = "".join([ " " for i in range(len(stack) - 2) ])
 
@@ -32,29 +32,31 @@ class Debug(Channel):
         (fr, f, l, fn, c, i) = frame
         f = re.sub(r'^.*dist-packages/', "", f)
         if msg is not None:
-            sys.stderr.write("DEBUG: %s%s:%d:%s(): %s\n" % 
-                (indent, f, l, fn, msg))
+            super(Debug, self)._print(
+                "DEBUG: %s%s:%d:%s(): %s" % (indent, f, l, fn, msg)
+            )
         else:
-            sys.stderr.write("DEBUG: %s%s:%d:%s()\n" % 
-                (indent, f, l, fn))
+            super(Debug, self)._print(
+                "DEBUG: %s%s:%d:%s()" % (indent, f, l, fn)
+            )
 
     def stack(self):
-        sys.stderr.write("DEBUG: BEGIN STACK TRACE\n")
+        super(Debug, self)._print("DEBUG: BEGIN STACK TRACE")
 
         stack = inspect.stack()[1:]
         for frame in stack:
             self._printFrame(frame, indent="    ")
 
-        sys.stderr.write("DEBUG: END STACK TRACE\n")
+        super(Debug, self)._print("DEBUG: END STACK TRACE")
 
     def exception(self, e = None):
         if e is None: e = "Exception"
 
         import traceback
-        sys.stderr.write("DEBUG: %s: %s" % (
-            repr(e),
-            "".join(traceback.format_tb(sys.exc_info()[2]))
+        super(Debug, self)._print("DEBUG: %s: %s" % (
+            repr(e), "".join(traceback.format_tb(sys.exc_info()[2]))
         ))
+
 
 class Verbose(Channel):
     pass
@@ -63,6 +65,7 @@ class Verbose(Channel):
 class Itemize(object):
     def __call__(self, changes, filename):
         sys.stdout.write("%11s %s\n" % (str(changes), filename))
+
 
 verbose = Verbose()
 debug = Debug()
