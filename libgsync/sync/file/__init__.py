@@ -44,7 +44,7 @@ class SyncFileInfoDatetime(object):
     def __getattr__(self, name):
         try:
             return self.__dict__[name]
-        except:
+        except Exception, e:
             return getattr(self.__d, name)
 
     def __repr__(self): return "SyncFileInfoDatetime('%s')" % str(self)

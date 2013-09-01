@@ -1,14 +1,13 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
 import os, re, sys
-from threading import Thread
 from libgsync.sync import Sync
 from libgsync.output import verbose, debug
 from libgsync.options import GsyncOptions
 from libgsync.drive import Drive
 from libgsync.bind import bind
 
-class Crawler(Thread):
+class Crawler(object):
     def __init__(self, src, dst):
         self._dev = None
         self._src = None
@@ -35,7 +34,7 @@ class Crawler(Thread):
         if src[-1] == "/": self._src += "/"
         if dst[-1] == "/": self._dst += "/"
 
-        super(Crawler, self).__init__(name = "Crawler: %s" % src)
+        #super(Crawler, self).__init__(name = "Crawler: %s" % src)
     
 
     def _devCheck(self, dev, path):
@@ -97,9 +96,11 @@ class Crawler(Thread):
 
         try:
             self._walk(srcpath, self._walkCallback, self._dev)
-        except KeyboardInterrupt:
-            print("Terminating...")
+
+        except KeyboardInterrupt, e:
+            print("Interrupted")
             pass
+
         except Exception, e:
             debug.exception(e)
             print("Error: %s" % str(e))

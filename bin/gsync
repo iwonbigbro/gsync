@@ -2,7 +2,7 @@
 
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
-import sys
+import sys, signal
 import libgsync
 from docopt import docopt
 
@@ -154,13 +154,18 @@ debug(args)
 import libgsync.options
 libgsync.options.initialise(args)
 
+def signal_handler(signal, frame):
+    print("Interrupted")
+    raise KeyboardInterrupt
+
+signal.signal(signal.SIGINT, signal_handler)
+
 try:
     for d in paths:
         debug("Creating crawler for: %s" % d)
 
         crawler = Crawler(d, dest)
-        crawler.start()
-        crawler.join()
+        crawler.run()
 
 except Exception, e:
     print("Error: %s" % str(e))

@@ -30,9 +30,7 @@ class Sync(object):
         changes = self._sync(path)
 
         if changes is not None:
-            if GsyncOptions.itemize_changes:
-                itemize(*changes)
-            else:
+            if not GsyncOptions.itemize_changes:
                 verbose(changes[1])
                 
     def _sync(self, path):
@@ -114,6 +112,9 @@ class Sync(object):
 
             if update or create:
                 changes[0] = '>'
+
+        if GsyncOptions.itemize_changes:
+            itemize(changes, relPath)
 
         if create:
             self.dst.create(dstPath, srcFile)
