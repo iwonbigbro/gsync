@@ -36,10 +36,11 @@ Fixed:
  * Interrupt handling now works, so Ctrl-C will halt the sync and output the
    progress (bytes sent/received) up to the interrupt.
 
+ * Implemented --progress functionality so that upload progress can be
+   monitored.
+
 To do:
 ------
-
- * Implement --progress functionality so that upload progress can be monitored.
 
  * Better handling of resumable uploads (--append).
 
