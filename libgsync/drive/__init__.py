@@ -615,7 +615,11 @@ class _Drive():
 
         return None
 
-    def update(self, path, properties, media_body = None):
+    def update(self,
+        path, properties,
+        media_body = None,
+        progress_callback = None
+    ):
         info = self.stat(path)
 
         if not info:
@@ -633,12 +637,26 @@ class _Drive():
             setattr(info, k, v)
 
         try:
-            return self.service().files().update(
+            req = self.service().files().update(
                 fileId = info.id,
                 body = info.dict(),
                 newRevision = True,
                 media_body = media_body
-            ).execute()
+            )
+
+            if progress_callback is None:
+                return req.execute()
+
+            else:
+                res = None
+                while res is None:
+                    debug(" * uploading next chunk...")
+                    status, res = req.next_chunk()
+                    if status:
+                        progress_callback(status)
+
+                return res
+
         except Exception, e:
             debug("Update failed: %s" % str(e))
             debug.stack()

@@ -1,6 +1,10 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
-import sys, inspect, re
+import os, sys, inspect, re
+from datetime import datetime
+
+# Make stdout unbuffered.
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 class Channel(object):
     _priority = -1 
@@ -66,6 +70,66 @@ class Itemize(object):
     def __call__(self, changes, filename):
         sys.stdout.write("%11s %s\n" % (str(changes), filename))
 
+
+class Progress(object):
+    _start = None
+    _enableOutput = True
+    _callback = None
+
+    bytesWritten = 0L
+    bytesTotal = 0
+    percentage = 0
+    timeTaken = 0
+
+    def __init__(self, enableOutput = True, callback = None):
+        self._start = datetime.now()
+        self._callback = callback
+        self.timeTaken = 0
+        self._enableOutput = enableOutput
+
+        self._print()
+
+    def _print(self):
+        if self._enableOutput:
+            ss = int(self.timeTaken)
+            s = ss % 60
+            m = int(ss / 60) % 60
+            h = int((ss / 60) / 60) % 60
+
+            sys.stdout.write("\r%12d %3d%% %11s %10s" % (
+                self.bytesWritten, self.percentage, self.rate(),
+                    "%d:%02d:%02d" % (h, m, s)
+            ))
+        
+    def __call__(self, status):
+        self.timeTaken = (datetime.now() - self._start).seconds
+        self.bytesWritten = long(status.resumable_progress)
+        self.percentage = int(status.progress() * 100.0)
+        self.bytesTotal = status.total_size
+
+        self._print()
+
+        if self._callback is not None:
+            self._callback(status)
+
+    def rate(self):
+        rate = float(self.bytesWritten) / max(0.1, float(self.timeTaken))
+
+        for x in [ 'B', 'KB', 'MB', 'GB', 'TB' ]:
+            if rate < 1024.0:
+                return "%3.2f%s/s" % (rate, x)
+            rate /= 1024.0
+
+    def complete(self, bytesWritten):
+        self.timeTaken = (datetime.now() - self._start).seconds
+        self.bytesWritten = bytesWritten
+        self.percentage = int(
+            (float(self.bytesWritten) / float(self.bytesTotal)) * 100.0
+        )
+
+        if self._enableOutput:
+            self._print()
+            sys.stdout.write("\n")
 
 verbose = Verbose()
 debug = Debug()

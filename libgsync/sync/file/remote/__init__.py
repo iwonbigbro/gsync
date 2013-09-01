@@ -1,7 +1,7 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
 import os, re
-from libgsync.output import verbose, debug, itemize
+from libgsync.output import verbose, debug, itemize, Progress
 from libgsync.sync.file import SyncFile, SyncFileInfo
 from libgsync.options import GsyncOptions
 from apiclient.http import MediaIoBaseUpload
@@ -91,11 +91,17 @@ class SyncFileRemote(SyncFile):
 
         if GsyncOptions.dry_run: return
 
+        def _callback(status):
+            self.bytesWritten = int(status.resumable_progress)
+            
+        progress = Progress(GsyncOptions.progress, _callback)
         drive = Drive()
-        info = drive.update(path, src.getInfo(), src.getUploader())
+        info = drive.update(path, src.getInfo(), src.getUploader(), progress)
 
         if info is not None:
             self.bytesWritten = long(info.get('fileSize', '0'))
+            progress.complete(self.bytesWritten)
+
         else:
             debug("Update failed")
 
