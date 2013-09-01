@@ -36,9 +36,14 @@ Fixed:
 Issues:
 -------
 
- * Currently running in dry-run mode while I implement the basics; nothing
-   is created, deleted or modified on disk or in the Google drive.
+ * Keyboard interrupt being ignored.  To interrupt, stop the process (Ctrl + Z) 
+   and send it a SIGTERM (kill %1).
 
- * There is a slight difference in behaviour when not run recursively and
-   directories specified on the command line do not have trailing slashes.
-   This will need to be fixed to ensure behaviour is the same as rsync.
+ * Append mode doesn't work, this is not supported by Google Drive.
+ 
+ * Trashed directories still retain all existing parents, but are hidden by the
+   Google Drive web client.  This means that deleting a directory will result in
+   files being synchronised with the trashed directory, until it is emptied from
+   trash.  A fix is required to check directories are not children of 'Trash'.
+ 
+ * Some features still not implemented.
