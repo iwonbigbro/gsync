@@ -33,13 +33,24 @@ Fixed:
  
  * Itemized output now occurs without needing to specify the verbose option.
 
+ * Interrupt handling now works, so Ctrl-C will halt the sync and output the
+   progress (bytes sent/received) up to the interrupt.
+
+To do:
+------
+
+ * Implement --progress functionality so that upload progress can be monitored.
+
+ * Better handling of resumable uploads (--append).
+
+ * Improved file attribute handling using Google Drive file attributes data.
+
 Issues:
 -------
 
- * Keyboard interrupt being ignored.  To interrupt, stop the process (Ctrl + Z) 
-   and send it a SIGTERM (kill %1).
-
- * Append mode doesn't work, this is not supported by Google Drive.
+ * Append mode doesn't work, this is not supported by Google Drive.  May be able
+   to work around it by caching the resumable upload ID somewhere locally when
+   a file is being synchronised.
  
  * Trashed directories still retain all existing parents, but are hidden by the
    Google Drive web client.  This means that deleting a directory will result in
