@@ -22,6 +22,22 @@ sequentially in order to allow synchronisation to occur immediately.
 The only prerequisite is that you have python.  The makefile will take care of
 installing any required python libraries using pip, which will also be obtained.
 
+RSync options implemented so far:
+---------------------------------
+
+ -v, --verbose               enable verbose output
+     --debug                 enable debug output
+ -q, --quiet                 suppress non-error messages
+ -r, --recursive             recurse into directories
+ -R, --relative              use relative path names
+ -u, --update                skip files that are newer on the receiver
+ -d, --dirs                  transfer directories without recursing
+ -g, --group                 preserve group
+ -o, --owner                 preserve owner (super-user only)
+ -p, --perms                 preserve permissions
+ -i, --itemize-changes       output a change-summary for all updates
+     --progress              show progress during transfer
+
 Fixed:
 ------
 
