@@ -22,6 +22,11 @@ sequentially in order to allow synchronisation to occur immediately.
 The only prerequisite is that you have python.  The makefile will take care of
 installing any required python libraries using pip, which will also be obtained.
 
+My Blog:
+--------
+
+http://mud-slide.blogspot.co.uk/
+
 RSync options implemented so far:
 ---------------------------------
 
