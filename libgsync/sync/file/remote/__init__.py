@@ -87,23 +87,26 @@ class SyncFileRemote(SyncFile):
     def _updateFile(self, path, src):
         debug("Updating remote file: %s" % path)
 
-        self.bytesWritten = 0
+        totalBytesWritten = self.bytesWritten
+        bytesWritten = 0
 
         if GsyncOptions.dry_run: return
 
         def _callback(status):
-            self.bytesWritten = int(status.resumable_progress)
+            bytesWritten = int(status.resumable_progress)
+            self.bytesWritten = totalBytesWritten + bytesWritten
             
         progress = Progress(GsyncOptions.progress, _callback)
         drive = Drive()
         info = drive.update(path, src.getInfo(), src.getUploader(), progress)
 
         if info is not None:
-            self.bytesWritten = long(info.get('fileSize', '0'))
-            progress.complete(self.bytesWritten)
-
+            bytesWritten = long(info.get('fileSize', '0'))
+            progress.complete(bytesWritten)
         else:
             debug("Update failed")
+
+        self.bytesWritten = totalBytesWritten + bytesWritten
 
     def _updateStats(self, path, src, mode, uid, gid, mtime, atime):
         debug("Updating remote file stats: %s" % path)

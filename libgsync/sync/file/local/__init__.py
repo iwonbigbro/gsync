@@ -1,11 +1,11 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
 import os, datetime
-from libgsync.output import verbose, debug, itemize
+from libgsync.output import verbose, debug, itemize, Progress
 from libgsync.drive.mimetypes import MimeTypes
 from libgsync.sync.file import SyncFile, SyncFileInfo
 from libgsync.options import GsyncOptions
-from apiclient.http import MediaFileUpload
+from apiclient.http import MediaFileUpload, MediaUploadProgress
 
 class SyncFileLocal(SyncFile):
     def getUploader(self, path = None):
@@ -122,6 +122,8 @@ class SyncFileLocal(SyncFile):
             if not GsyncOptions.dry_run:
                 f = open(path, "w")
 
+            progress = Progress(GsyncOptions.progress)
+
             while bytesWritten < fileSize:
                 chunk = uploader.getbytes(bytesWritten, chunkSize)
 
@@ -130,10 +132,14 @@ class SyncFileLocal(SyncFile):
                 if not chunk: break
                 if f is not None: f.write(chunk)
 
-                bytesWritten += len(chunk)
+                chunkLen = len(chunk)
+                bytesWritten += chunkLen
+                self.bytesWritten += chunkLen
 
-            self.bytesWritten += bytesWritten
+                progress(MediaUploadProgress(bytesWritten, fileSize))
+
             debug("    Written %d bytes" % bytesWritten)
+            progress.complete(bytesWritten)
 
             if bytesWritten < fileSize:
                 raise Exception("Got %d bytes, expected %d bytes" % (

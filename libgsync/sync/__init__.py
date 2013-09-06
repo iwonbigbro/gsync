@@ -116,17 +116,20 @@ class Sync(object):
         if GsyncOptions.itemize_changes:
             itemize(changes, relPath)
 
-        if create:
-            self.dst.create(dstPath, srcFile)
+        try:
+            if create:
+                self.dst.create(dstPath, srcFile)
 
-        elif GsyncOptions.ignore_existing:
-            debug("File exists on the receiver, skipping: %s" % path)
-            return None
+            elif GsyncOptions.ignore_existing:
+                debug("File exists on the receiver, skipping: %s" % path)
+                return None
 
-        else:
-            self.dst.update(dstPath, srcFile)
-
-        self.totalBytesSent += self.dst.bytesWritten
-        self.totalBytesReceived += self.dst.bytesRead
+            else:
+                self.dst.update(dstPath, srcFile)
+        except KeyboardInterrupt, e:
+            raise
+        finally:
+            self.totalBytesSent += self.dst.bytesWritten
+            self.totalBytesReceived += self.dst.bytesRead
 
         return (changes, relPath)
