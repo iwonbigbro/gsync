@@ -4,7 +4,7 @@ import os, re
 from libgsync.output import verbose, debug, itemize, Progress
 from libgsync.sync.file import SyncFile, SyncFileInfo
 from libgsync.options import GsyncOptions
-from apiclient.http import MediaIoBaseUpload
+from apiclient.http import MediaIoBaseUpload, MediaUploadProgress
 from libgsync.drive import Drive
 
 class SyncFileRemote(SyncFile):
@@ -89,23 +89,27 @@ class SyncFileRemote(SyncFile):
 
         totalBytesWritten = self.bytesWritten
         bytesWritten = 0
-
-        if GsyncOptions.dry_run: return
+        info = src.getInfo()
 
         def _callback(status):
             bytesWritten = int(status.resumable_progress)
             self.bytesWritten = totalBytesWritten + bytesWritten
             
         progress = Progress(GsyncOptions.progress, _callback)
-        drive = Drive()
-        info = drive.update(path, src.getInfo(), src.getUploader(), progress)
 
-        if info is not None:
-            bytesWritten = long(info.get('fileSize', '0'))
-            progress.complete(bytesWritten)
+        if GsyncOptions.dry_run:
+            bytesWritten = info.fileSize
+            progress(MediaUploadProgress(bytesWritten, bytesWritten))
         else:
-            debug("Update failed")
+            drive = Drive()
+            info = drive.update(path, info, src.getUploader(), progress)
 
+            if info is not None:
+                bytesWritten = long(info.get('fileSize', '0'))
+            else:
+                debug("Update failed")
+
+        progress.complete(bytesWritten)
         self.bytesWritten = totalBytesWritten + bytesWritten
 
     def _updateStats(self, path, src, mode, uid, gid, mtime, atime):
