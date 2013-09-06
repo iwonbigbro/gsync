@@ -304,13 +304,31 @@ class _Drive():
         if not sys.stdin.isatty():
             raise ENoTTY
 
+        # Locate the client.json file.
+        client_json_locations = [
+            '/usr/local/libgsync/data/client.json',
+            '/usr/share/libgsync/data/client.json',
+            '/usr/local/share/libgsync/data/client.json',
+            '/usr/lib/libgsync/data/client.json',
+            os.path.join(os.path.dirname(__file__), 'data', 'client.json'),
+        ]
+        client_json = None
+
+        for f in client_json_locations:
+            if os.path.exists(f):
+                client_json = f
+                break
+
+        if client_json is None:
+            raise EFileNotFound('data/client.json')
+
         # Reresh token not available through config, so let's request a new
         # one using the app client ID and secret.  Here, we need to obtain an
         # auth URL that the user will need to visit to obtain the user code
         # needed to allow us to obtain a refresh token.
         from oauth2client.client import flow_from_clientsecrets
         flow = flow_from_clientsecrets(
-            os.path.join(os.path.dirname(__file__), 'data', 'client.json'),
+            client_json,
             scope = 'https://www.googleapis.com/auth/drive',
             redirect_uri = 'urn:ietf:wg:oauth:2.0:oob'
         )

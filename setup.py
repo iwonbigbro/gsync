@@ -33,8 +33,8 @@ setup(
         'libgsync.sync.file.local',
         'libgsync.sync.file.remote',
     ],
-    package_data = {
-        'libgsync': [ 'data/*.json' ],
-    },
+    data_files = [
+        ('libgsync/data', [ 'libgsync/data/client.json' ]),
+    ],
     scripts = [ 'bin/gsync' ],
 )

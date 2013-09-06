@@ -12,7 +12,6 @@
 /usr/local/lib/python2.7/dist-packages/libgsync/sync/file/factory.py
 /usr/local/lib/python2.7/dist-packages/libgsync/sync/file/local/__init__.py
 /usr/local/lib/python2.7/dist-packages/libgsync/sync/file/remote/__init__.py
-/usr/local/lib/python2.7/dist-packages/libgsync/data/client.json
 /usr/local/lib/python2.7/dist-packages/libgsync/version.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/__init__.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/output.pyc
@@ -28,4 +27,5 @@
 /usr/local/lib/python2.7/dist-packages/libgsync/sync/file/local/__init__.pyc
 /usr/local/lib/python2.7/dist-packages/libgsync/sync/file/remote/__init__.pyc
 /usr/local/bin/gsync
+/usr/local/libgsync/data/client.json
 /usr/local/lib/python2.7/dist-packages/gsync-0.1.0.egg-info
