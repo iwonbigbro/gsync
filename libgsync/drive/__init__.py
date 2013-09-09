@@ -227,7 +227,7 @@ class _Drive():
 
             if res.status in [ 200, 202 ]:
                 # API expires every minute.
-                apistr = content
+                apistr = str(content)
                 api.update(json.loads(apistr))
                 api['expires'] = int(time.time()) + 60
 

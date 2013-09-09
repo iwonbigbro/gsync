@@ -22,6 +22,13 @@ sequentially in order to allow synchronisation to occur immediately.
 The only prerequisite is that you have python.  The makefile will take care of
 installing any required python libraries using pip, which will also be obtained.
 
+Donations:
+-------
+
+If you like the software, don't forget to donate to further development of it!
+
+https://github.com/iwonbigbro/gsync/wiki/Donate
+
 My Blog:
 --------
 
