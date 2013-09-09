@@ -310,6 +310,7 @@ class _Drive():
             '/usr/share/libgsync/data/client.json',
             '/usr/local/share/libgsync/data/client.json',
             '/usr/lib/libgsync/data/client.json',
+            '/usr/libgsync/data/client.json',
             os.path.join(os.path.dirname(__file__), 'data', 'client.json'),
         ]
         client_json = None
