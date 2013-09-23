@@ -326,3 +326,9 @@ class SyncFile(object):
 
         debug("Creating relative path from %s and %s" % (expr, relpath))
         return os.path.normpath(re.sub(expr, "", relpath + "/"))
+
+    def isremote(self):
+        return (self.__class__.__name__ == "RsyncFileRemote")
+
+    def islocal(self):
+        return (self.__class__.__name__ == "RsyncFileLocal")

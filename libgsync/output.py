@@ -72,20 +72,15 @@ class Itemize(object):
 
 
 class Progress(object):
-    _start = None
-    _enableOutput = True
-    _callback = None
-
-    bytesWritten = 0L
-    bytesTotal = 0
-    percentage = 0
-    timeTaken = 0
-
     def __init__(self, enableOutput = True, callback = None):
-        self._start = datetime.now()
         self._callback = callback
-        self.timeTaken = 0
         self._enableOutput = enableOutput
+        self._start = datetime.now()
+
+        self.bytesWritten = 0L
+        self.bytesTotal = 0L
+        self.percentage = 0
+        self.timeTaken = 0
 
         self._print()
 
@@ -123,9 +118,15 @@ class Progress(object):
     def complete(self, bytesWritten):
         self.timeTaken = (datetime.now() - self._start).seconds
         self.bytesWritten = bytesWritten
-        self.percentage = int(
-            (float(self.bytesWritten) / float(self.bytesTotal)) * 100.0
-        )
+
+        if self.bytesTotal > 0L:
+            self.percentage = int(
+                (float(self.bytesWritten) / float(self.bytesTotal)) * 100.0
+            )
+        elif self.bytesWritten == 0L:
+            self.percentage = 100
+        else:
+            self.percentage = 0
 
         if self._enableOutput:
             self._print()

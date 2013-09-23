@@ -60,7 +60,7 @@ class Sync(object):
 
 
         if dstFile is None or dstFile.mimeType != srcFile.mimeType:
-            changes = bytearray(">++++++++++")
+            changes = bytearray("+++++++++++")
             create = True
         else:
             changes = bytearray("...........")
@@ -111,7 +111,10 @@ class Sync(object):
             changes[1] = 'f'
 
             if update or create:
-                changes[0] = '>'
+                if self.dst.islocal():
+                    changes[0] = '>'
+                else:
+                    changes[0] = '<'
 
         if GsyncOptions.itemize_changes:
             itemize(changes, relPath)
