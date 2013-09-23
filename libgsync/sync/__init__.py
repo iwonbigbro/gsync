@@ -130,6 +130,7 @@ class Sync(object):
             else:
                 self.dst.update(dstPath, srcFile)
         except KeyboardInterrupt, e:
+            debug("Interrupted")
             raise
         finally:
             self.totalBytesSent += self.dst.bytesWritten

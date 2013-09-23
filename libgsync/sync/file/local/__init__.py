@@ -94,7 +94,6 @@ class SyncFileLocal(SyncFile):
         path = self.getPath(path)
 
         debug("Creating local file: %s" % path)
-        debug.stack()
 
         f = None
         try:
@@ -145,8 +144,14 @@ class SyncFileLocal(SyncFile):
                 raise Exception("Got %d bytes, expected %d bytes" % (
                     bytesWritten, fileSize
                 ))
+
+        except KeyboardInterrupt:
+            debug("Interrupted")
+            raise
+
         except Exception, e:
             debug("Write failed: %s" % str(e))
             raise
+
         finally:
             if f is not None: f.close()
