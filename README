@@ -67,6 +67,14 @@ Fixed:
  * Implemented --progress functionality so that upload progress can be
    monitored.
 
+ * Fixed Bug: "Syncs one file and crashes with division by zero error"
+
+ * Fixed Bug: "Always: Error: String or Integer object expected for key,
+               unicode found"
+ 
+ * Fixed Bug: "BUG: Files get updated that are in Trash and do not get
+               restored."
+
 To do:
 ------
 
@@ -80,10 +88,5 @@ Issues:
  * Append mode doesn't work, this is not supported by Google Drive.  May be able
    to work around it by caching the resumable upload ID somewhere locally when
    a file is being synchronised.
- 
- * Trashed directories still retain all existing parents, but are hidden by the
-   Google Drive web client.  This means that deleting a directory will result in
-   files being synchronised with the trashed directory, until it is emptied from
-   trash.  A fix is required to check directories are not children of 'Trash'.
  
  * Some features still not implemented.
