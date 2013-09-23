@@ -204,34 +204,21 @@ class _Drive():
 
         debug("Loading Google Drive service from config")
 
-        cfg = self._getConfigFile("drive.v2.service")
-        api = shelve.open(cfg)
-        apistr = None
-        now = int(time.time())
-
         from apiclient.discovery import build_from_document, DISCOVERY_URI
-        if now < int(api.get('expires', 0)):
-            apistr = json.dumps(dict(api))
-        else:
-            debug("API has expired")
+        
+        debug("Downloading API service")
 
-        if not apistr:
-            debug("Downloading API service")
+        import uritemplate
+        url = uritemplate.expand(DISCOVERY_URI, {
+            'api': 'drive',
+            'apiVersion': 'v2'
+        })
+        res, content = http.request(url)
 
-            import uritemplate
-            url = uritemplate.expand(DISCOVERY_URI, {
-                'api': 'drive',
-                'apiVersion': 'v2'
-            })
-            res, content = http.request(url)
-
-            if res.status in [ 200, 202 ]:
-                # API expires every minute.
-                apistr = content
-                api.update(json.loads(apistr))
-                api['expires'] = int(time.time()) + 60
-
-        api.close()
+        apistr = None
+        if res.status in [ 200, 202 ]:
+            # API expires every minute.
+            apistr = str(content)
 
         if not apistr:
             return None
@@ -310,6 +297,7 @@ class _Drive():
             '/usr/share/libgsync/data/client.json',
             '/usr/local/share/libgsync/data/client.json',
             '/usr/lib/libgsync/data/client.json',
+            '/usr/libgsync/data/client.json',
             os.path.join(os.path.dirname(__file__), 'data', 'client.json'),
         ]
         client_json = None
