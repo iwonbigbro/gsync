@@ -10,6 +10,15 @@ from libgsync.output import verbose, debug
 from libgsync.drive.mimetypes import MimeTypes
 from libgsync.drive.file import DriveFile
 
+import gflags
+
+# Set to True for strict positional parameter exceptions in oauth2client
+if False:
+    gflags.FLAGS['positional_parameters_enforcement'].value = 'EXCEPTION'
+else:
+    gflags.FLAGS['positional_parameters_enforcement'].value = 'IGNORE'
+
+
 if debug.enabled():
     import logging
     logger = logging.getLogger()
@@ -695,6 +704,7 @@ class _Drive():
         parentId = kwargs.get("parentId")
         mimeType = kwargs.get("mimeType")
         fileId = kwargs.get("id")
+        includeTrash = kwargs.get("includeTrash", False)
         result = []
 
         if parentId is not None:
@@ -717,6 +727,9 @@ class _Drive():
 
             if mimeType is not None:
                 query.append('mimeType = "%s"' % mimeType)
+
+        if not includeTrash:
+            query.append('trashed = false')
 
         if len(query) > 0:
             param['q'] = ' and '.join(query)
