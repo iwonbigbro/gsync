@@ -1,0 +1,3 @@
+gsync 0.1.1:
+
+ * FIXED BUG #13: Specifying a file to copy instead of a directory does nothing.
