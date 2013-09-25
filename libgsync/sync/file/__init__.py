@@ -328,7 +328,9 @@ class SyncFile(object):
         return os.path.normpath(re.sub(expr, "", relpath + "/"))
 
     def isremote(self):
-        return (self.__class__.__name__ == "RsyncFileRemote")
+        debug("self.__class__.__name__ == %s" % self.__class__.__name__)
+        return (self.__class__.__name__ == "SyncFileRemote")
 
     def islocal(self):
-        return (self.__class__.__name__ == "RsyncFileLocal")
+        debug("self.__class__.__name__ == %s" % self.__class__.__name__)
+        return (self.__class__.__name__ == "SyncFileLocal")

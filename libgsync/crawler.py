@@ -7,6 +7,15 @@ from libgsync.options import GsyncOptions
 from libgsync.drive import Drive
 from libgsync.bind import bind
 
+# os.walk doesn't yield anything if passed a file.  This wrapper simply
+# yields the file as if the directory had been provided as the path.
+def os_walk_wrapper(path):
+    if os.path.isdir(path):
+        os.walk(path)
+    elif os.path.exists(path):
+        d, f = os.path.split(path)
+        yield (d, [], [f])
+
 class Crawler(object):
     def __init__(self, src, dst):
         self._dev = None
@@ -19,7 +28,7 @@ class Crawler(object):
             self._walkCallback = bind("walk", self._drive)
             self._src = self._drive.normpath(src)
         else:
-            self._walkCallback = os.walk
+            self._walkCallback = os_walk_wrapper
             self._src = os.path.normpath(src)
             st_info = os.stat(self._src)
 

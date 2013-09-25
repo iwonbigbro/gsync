@@ -178,13 +178,14 @@ class _Drive():
         self._service = None
         self._credentialStorage = None
         
-        # Load Google Drive local cache (currently disabled)
-        cfg = self._getConfigFile("drive.v2.gcache")
-        self._gcache = shelve.open(cfg, flag = 'n')
+        # Load Google Drive local cache
+        self._gcache = {}
 
-        # Load parent folder cache (currently disabled)
-        cfg = self._getConfigFile("drive.v2.pcache")
-        self._pcache = shelve.open(cfg, flag = 'n')
+        # Load parent folder cache
+        self._pcache = {}
+
+        # Load file properties cache
+        self._icache = {}
 
         debug("Initialisation complete")
 
@@ -246,12 +247,6 @@ class _Drive():
             storage = self._getCredentialStorage()
             if storage is not None:
                 storage.put(credentials)
-
-        debug("Saving gcache (%d items)..." % len(self._gcache))
-        self._gcache.close()
-
-        debug("Saving pcache (%d items)..." % len(self._pcache))
-        self._pcache.close()
 
         debug("My pid = %d" % os.getpid())
 
@@ -426,6 +421,11 @@ class _Drive():
 
         return None
 
+    # TODO: Implement function for obtaining and caching properties.
+    def _getProperties(self, ent):
+        debug("Fetching file properties: %s" % str(ent))
+        return None
+
     def stat(self, path):
         self.validatepath(path)
         path = self.normpath(path)
@@ -484,6 +484,9 @@ class _Drive():
             if ent is None:
                 return None
 
+            # Obtain file properties.
+            props = self._getProperties(ent)
+
             # Update path cache.
             if self._pcache.get(search) is None:
                 debug("Updating path cache: %s" % search)
@@ -493,10 +496,14 @@ class _Drive():
                 debug("Found %s" % search)
                 debug(" * ent: %s" % ent)
                 df = DriveFile(path = path, **ent)
+
+                if props is not None:
+                    df.setProperties(props)
+
                 debug(" * returning %s" % df)
                 return df
 
-        # Finally, couldn't find anything, raise an error.
+        # Finally, couldn't find anything, raise an error?
         return None
 
     def rm(self, path, recursive=False):
@@ -751,8 +758,6 @@ class _Drive():
 
         debug("Updating google cache: %s (%d items)" % (parentId, len(ents)))
         self._gcache[parentId] = ents
-
-        debug("My pid = %d" % os.getpid())
 
         return ents
 
