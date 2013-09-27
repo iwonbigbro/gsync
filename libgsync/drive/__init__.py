@@ -13,11 +13,13 @@ from libgsync.drive.file import DriveFile
 import gflags
 
 # Set to True for strict positional parameter exceptions in oauth2client
-if False:
-    gflags.FLAGS['positional_parameters_enforcement'].value = 'EXCEPTION'
-else:
-    gflags.FLAGS['positional_parameters_enforcement'].value = 'IGNORE'
-
+try:
+    if False:
+        gflags.FLAGS['positional_parameters_enforcement'].value = 'EXCEPTION'
+    else:
+        gflags.FLAGS['positional_parameters_enforcement'].value = 'IGNORE'
+except Exception:
+    pass
 
 if debug.enabled():
     import logging
