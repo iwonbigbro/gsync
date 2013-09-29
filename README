@@ -63,31 +63,6 @@ RSync options implemented so far:
  -i, --itemize-changes       output a change-summary for all updates
      --progress              show progress during transfer
 
-Fixed:
-------
-
- * Traversal of the Google drive is now more reliable and requires less CPU
-   and network requests.
- 
- * Intermediate directory creation now occurs through a restructure of the
-   directory walking code, ensuring directories are provided to the callback.
- 
- * Itemized output now occurs without needing to specify the verbose option.
-
- * Interrupt handling now works, so Ctrl-C will halt the sync and output the
-   progress (bytes sent/received) up to the interrupt.
-
- * Implemented --progress functionality so that upload progress can be
-   monitored.
-
- * Fixed Bug: "Syncs one file and crashes with division by zero error"
-
- * Fixed Bug: "Always: Error: String or Integer object expected for key,
-               unicode found"
- 
- * Fixed Bug: "BUG: Files get updated that are in Trash and do not get
-               restored."
-
 To do:
 ------
 
