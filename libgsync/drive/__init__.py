@@ -10,10 +10,9 @@ from libgsync.output import verbose, debug
 from libgsync.drive.mimetypes import MimeTypes
 from libgsync.drive.file import DriveFile
 
-import gflags
-
 # Set to True for strict positional parameter exceptions in oauth2client
 try:
+    import gflags
     if False:
         gflags.FLAGS['positional_parameters_enforcement'].value = 'EXCEPTION'
     else:
@@ -298,23 +297,22 @@ class _Drive():
             raise ENoTTY
 
         # Locate the client.json file.
-        client_json_locations = [
-            '/usr/local/libgsync/data/client.json',
-            '/usr/share/libgsync/data/client.json',
-            '/usr/local/share/libgsync/data/client.json',
-            '/usr/lib/libgsync/data/client.json',
-            '/usr/libgsync/data/client.json',
-            os.path.join(os.path.dirname(__file__), 'data', 'client.json'),
-        ]
-        client_json = None
+        client_json = self._getConfigFile("client.json")
 
-        for f in client_json_locations:
-            if os.path.exists(f):
-                client_json = f
-                break
+        # Create the client.json file if not present.
+        if not os.path.exists(client_json):
+            try:
+                from libgsync.drive.client_json import client_obj
 
-        if client_json is None:
-            raise EFileNotFound('data/client.json')
+                with open(client_json, "w") as f:
+                    f.write(json.dumps(client_obj))
+
+            except Exception, e:
+                debug("Exception: %s" % str(e))
+                raise
+
+        if not os.path.exists(client_json):
+            raise EFileNotFound(client_json)
 
         # Reresh token not available through config, so let's request a new
         # one using the app client ID and secret.  Here, we need to obtain an

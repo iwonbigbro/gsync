@@ -3,6 +3,9 @@
 import os, datetime, time, posix, dateutil.parser, re
 from dateutil.tz import tzutc
 
+from zlib import compress, decompress
+from base64 import b64encode, b64decode
+
 try: import cPickle as pickle
 except Exception: import pickle
 
@@ -131,17 +134,15 @@ class SyncFileInfo(object):
         if isinstance(value, tuple) or isinstance(value, list):
             value = posix.stat_result(tuple(value))
             self._dict['statInfo'] = value
-            self._dict['description'] = pickle.dumps(
-                value
-            ).encode("hex")
+            self._dict['description'] = \
+                b64encode(compress(pickle.dumps(value))) 
 
             return
             
         if isinstance(value, posix.stat_result):
             try:
-                self._dict['description'] = pickle.dumps(
-                    value
-                ).encode("hex")
+                self._dict['description'] = \
+                    b64encode(compress(pickle.dumps(value))) 
                 self._dict['statInfo'] = value
             except pickle.PicklingError:
                 pass
@@ -152,16 +153,26 @@ class SyncFileInfo(object):
             value = str(value)
 
         if isinstance(value, str):
+            # First decode using new base64 compressed method.
             try:
-                self._dict['statInfo'] = pickle.loads(
-                    value.decode("hex")
-                )
+                self._dict['statInfo'] = \
+                    pickle.loads(decompress(b64decode(value)))
                 self._dict['description'] = value
-            except pickle.UnpicklingError:
-                pass
-            except EOFError:
+                return
+            except Exception, e:
+                debug("Base 64 decode failed: %s" % str(e))
                 pass
 
+            # That failed, try to decode using old hex encoding.
+            try:
+                self._dict['statInfo'] = pickle.loads(value.decode("hex"))
+                self._dict['description'] = value
+                return
+            except Exception, e:
+                debug("Hex decode failed: %s" % str(e))
+                pass
+
+            debug("Failed to decode string: '%s'" % value)
             return
 
         raise EInvalidStatInfoType(type(value))

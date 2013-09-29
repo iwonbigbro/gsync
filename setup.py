@@ -15,14 +15,15 @@ setup(
     author_email = 'iwonbigbro@gmail.com',
     url = 'https://github.com/iwonbigbro/gsync',
     requires = [
-        'docopt',
         'apiclient',
         'apiclient.discovery',
+        'cPickle',
+        'docopt(>=0.6.0)',
         'httplib2',
         'json',
-        'pickle',
-        'cPickle',
         'oauth2client',
+        'pickle',
+        'setuptools',
         'urllib3',
     ],
     packages = [
@@ -32,9 +33,6 @@ setup(
         'libgsync.sync.file',
         'libgsync.sync.file.local',
         'libgsync.sync.file.remote',
-    ],
-    data_files = [
-        ('libgsync/data', [ 'libgsync/data/client.json' ]),
     ],
     scripts = [ 'bin/gsync' ],
 )
