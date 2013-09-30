@@ -37,13 +37,13 @@ http://mud-slide.blogspot.co.uk/
 Installation:
 -------------
 
-The GSync package is now available on pypi.python.org.  Installing using pypi-install will mean that dependencies will be automatically resolved, alleviating the need to resolve dependencies and download packages yourself.  On debian, install the python-stdeb package:
+The GSync package is now available on pypi.python.org.  Installing using pypi-install will mean that dependencies will be automatically resolved, alleviating the need to resolve dependencies and download packages yourself.  You should be able to install using easy_install:
 
-    $ sudo apt-get install python-stdeb
+    $ sudo easy_install --verbose gsync
 
-Once the python-stdeb package is installed, you will be able to install GSync as follows:
+On debian, you can install the easy_install utility via the python-setuptools package:
 
-    $ sudo pypi-install gsync
+    $ sudo apt-get install python-setuptools
 
 That's it.  GSync will be installed along with any required packages.
 
