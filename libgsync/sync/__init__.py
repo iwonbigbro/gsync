@@ -59,10 +59,10 @@ class Sync(object):
         # If GsyncOptions.force_dest_file is None, the following are ignored.
         if force_dest_file:
             folder = False
-            dstPath = self.dst + ""
             dstFile = self.dst.getInfo()
+            dstPath = self.dst + ""
             relPath = os.path.basename(dstPath)
-            debug("Forcing destination file: %s" % dstFile)
+            debug("Forcing destination file: %s" % dstPath)
 
         else:
             dstPath = self.dst + relPath

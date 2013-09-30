@@ -154,15 +154,15 @@ debug(args)
 import libgsync.options
 libgsync.options.initialise(args)
 
+# If there are multiple source paths, the destination is always a
+# directory if a name is supplied.  Otherwise, the destination is
+# a directory if the source is also a directory, or it is a file if
+# the destination does not exist or is already an existing file.
+if len(paths) > 1:
+    debug("Multiple source files, destination cannot be a file")
+    libgsync.options.GsyncOptions.force_dest_file = False
+
 try:
-    # If there are multiple source paths, the destination is always a
-    # directory if a name is supplied.  Otherwise, the destination is
-    # a directory if the source is also a directory, or it is a file if
-    # the destination does not exist or is already an existing file.
-    if len(paths) > 0:
-        libgsync.options.GsyncOptions.force_dest_dir = True
-    else:
-        libgsync.options.GsyncOptions.force_dest_dir = None
 
     for p in paths:
         debug("Creating crawler for: %s" % p)

@@ -618,6 +618,9 @@ class _Drive():
         for k, v in properties.iteritems():
             body[k] = str(v)
 
+        # Retain the title from the path being created.
+        body['title'] = os.path.basename(path)
+
         if parentId:
             body['parents'] = [{'id': parentId}]
 

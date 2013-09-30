@@ -78,8 +78,10 @@ class Crawler(object):
             ))
             force_dest_file = False
 
-        debug("force_dest_file = %s" % force_dest_file)
-        GsyncOptions.force_dest_file = force_dest_file
+        # Only update if not already set.
+        if GsyncOptions.force_dest_file is None:
+            debug("force_dest_file = %s" % force_dest_file)
+            GsyncOptions.force_dest_file = force_dest_file
 
         #super(Crawler, self).__init__(name = "Crawler: %s" % src)
     
@@ -102,13 +104,15 @@ class Crawler(object):
                 debug("Not on same device: %s" % d)
                 continue
 
-            if GsyncOptions.dirs or GsyncOptions.recursive:
-                # Sync the directory but not its contents
-                debug("Synchronising directory: %s" % d)
-                self._sync(d)
-            else:
-                sys.stdout.write("skipping directory %s\n" % d)
-                break
+            if not GsyncOptions.force_dest_file:
+                if GsyncOptions.dirs or GsyncOptions.recursive:
+
+                    # Sync the directory but not its contents
+                    debug("Synchronising directory: %s" % d)
+                    self._sync(d)
+                else:
+                    sys.stdout.write("skipping directory %s\n" % d)
+                    break
 
             for f in files:
                 f = os.path.join(d, f)

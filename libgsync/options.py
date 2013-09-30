@@ -2,7 +2,7 @@
 
 class GsyncOptions():
     # Internal option for determining destination file type.
-    force_dest_file = False
+    force_dest_file = None
 
     pass
 
