@@ -1,6 +1,9 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
 class GsyncOptions():
+    # Internal option for determining destination file type.
+    force_dest_file = False
+
     pass
 
 def initialise(options):

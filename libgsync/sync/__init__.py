@@ -45,11 +45,29 @@ class Sync(object):
             debug("File not found: %s" % path)
             return None
 
-        dstPath = self.dst + relPath
-        dstFile = self.dst.getInfo(relPath)
+        debug("srcFile = %s" % srcFile)
+
+        folder = bool(srcFile.mimeType == MimeTypes.FOLDER)
+        dstPath = None
+        dstFile = None
         create = False
         update = False
-        folder = bool(srcFile.mimeType == MimeTypes.FOLDER)
+
+        force_dest_file = GsyncOptions.force_dest_file
+        debug("force_dest_file = %s" % force_dest_file)
+
+        # If GsyncOptions.force_dest_file is None, the following are ignored.
+        if force_dest_file:
+            folder = False
+            dstPath = self.dst + ""
+            dstFile = self.dst.getInfo()
+            relPath = os.path.basename(dstPath)
+            debug("Forcing destination file: %s" % dstFile)
+
+        else:
+            dstPath = self.dst + relPath
+            dstFile = self.dst.getInfo(relPath)
+            debug("Defaulting destination directory: %s" % dstPath)
 
         if dstFile is None:
             debug("File not found: %s" % dstPath)
@@ -57,7 +75,6 @@ class Sync(object):
             debug("Destination mimetype(%s) != source mimetype(%s)" % (
                 dstFile.mimeType, srcFile.mimeType
             ))
-
 
         if dstFile is None or dstFile.mimeType != srcFile.mimeType:
             changes = bytearray("+++++++++++")

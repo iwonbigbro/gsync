@@ -5,6 +5,7 @@ from libgsync.sync import Sync
 from libgsync.output import verbose, debug
 from libgsync.options import GsyncOptions
 from libgsync.drive import Drive
+from libgsync.drive.mimetypes import MimeTypes
 from libgsync.bind import bind
 
 # os.walk doesn't yield anything if passed a file.  This wrapper simply
@@ -21,27 +22,64 @@ class Crawler(object):
         self._dev = None
         self._src = None
         self._dst = None
+        
+        force_dest_file = GsyncOptions.force_dest_file
 
         self._drive = Drive()
 
         if self._drive.is_drivepath(src):
             self._walkCallback = bind("walk", self._drive)
             self._src = self._drive.normpath(src)
+            info = self._drive.stat(self._src)
+
+            if info and info.mimeType != MimeTypes.FOLDER:
+                debug("Source is not a directory, forcing dest file: %s" % (
+                    self._src
+                ))
+                force_dest_file = True
         else:
             self._walkCallback = os_walk_wrapper
             self._src = os.path.normpath(src)
             st_info = os.stat(self._src)
+
+            if os.path.isfile(self._src):
+                debug("Source is not a directory, forcing dest file: %s" % (
+                    self._src
+                ))
+                force_dest_file = True
 
             if GsyncOptions.one_file_system:
                 self._dev = st_info.st_dev
 
         if self._drive.is_drivepath(dst):
             self._dst = self._drive.normpath(dst)
+            info = self._drive.stat(self._dst)
+
+            if info and info.mimeType == MimeTypes.FOLDER:
+                debug("Dest is a directory, not forcing dest file: %s" % (
+                    self._dst
+                ))
+                force_dest_file = False
         else:
             self._dst = os.path.normpath(dst)
+            if os.path.isdir(self._dst):
+                debug("Dest is a directory, not forcing dest file: %s" % (
+                    self._dst
+                ))
+                force_dest_file = False
 
-        if src[-1] == "/": self._src += "/"
-        if dst[-1] == "/": self._dst += "/"
+        if src[-1] == "/":
+            self._src += "/"
+
+        if dst[-1] == "/":
+            self._dst += "/"
+            debug("Dest has trailing slash, not forcing dest file: %s" % (
+                self._dst
+            ))
+            force_dest_file = False
+
+        debug("force_dest_file = %s" % force_dest_file)
+        GsyncOptions.force_dest_file = force_dest_file
 
         #super(Crawler, self).__init__(name = "Crawler: %s" % src)
     

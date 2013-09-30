@@ -184,7 +184,7 @@ class SyncFile(object):
     bytesWritten = 0
 
     def __init__(self, path):
-        self._path = path
+        self._path = unicode(path)
 
     def __str__(self):
         return self._path
@@ -193,8 +193,7 @@ class SyncFile(object):
         return self.getPath(path)
 
     def getPath(self, path = None):
-        if path is None or path == "":
-            return self._path
+        if not path: return self._path
 
         debug("Joining: '%s' with '%s'" % (self._path, path))
         return os.path.join(self._path, path)
