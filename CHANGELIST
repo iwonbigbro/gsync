@@ -1,3 +1,7 @@
+gsync 0.1.2:
+
+ * FIXED BUG #15: Specifying source and/or destination files results in creation of directories where there should be files, on the client or server.
+
 gsync 0.1.1:
 
  * FIXED BUG #13: Specifying a file to copy instead of a directory does nothing.
