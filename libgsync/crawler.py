@@ -12,7 +12,8 @@ from libgsync.bind import bind
 # yields the file as if the directory had been provided as the path.
 def os_walk_wrapper(path):
     if os.path.isdir(path):
-        os.walk(path)
+        for d, dirs, files in os.walk(path):
+            yield (d, dirs, files)
     elif os.path.exists(path):
         d, f = os.path.split(path)
         yield (d, [], [f])
