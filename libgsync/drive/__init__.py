@@ -443,7 +443,8 @@ class _Drive():
             path = self.normpath('/'),
             id = 'root',
             title = '/',
-            mimeType = MimeTypes.FOLDER
+            mimeType = MimeTypes.FOLDER,
+            modifiedDate = "Thu, 01 Jan 1970 00:00:00 +0000"
         )
 
         # User has requested root directory
