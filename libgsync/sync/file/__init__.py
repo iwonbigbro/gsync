@@ -184,7 +184,7 @@ class SyncFile(object):
     bytesWritten = 0
 
     def __init__(self, path):
-        self._path = unicode(path)
+        self._path = str(path)
 
     def __str__(self):
         return self._path
@@ -334,7 +334,7 @@ class SyncFile(object):
         expr = r'^%s+' % path
         relpath = self.normpath(relpath)
 
-        debug("Creating relative path from %s and %s" % (expr, relpath))
+        debug("Creating relative path from %s and %s" % (repr(expr), relpath))
         return os.path.normpath(re.sub(expr, "", relpath + "/"))
 
     def isremote(self):
