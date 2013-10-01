@@ -1,3 +1,9 @@
+gsync 0.1.3:
+
+ * FIXED BUG #17 and #18: Does not obey --recursive option anymore.
+
+ * FIXED BUG #16: Error: __init__() takes at least 5 arguments (4 given)
+
 gsync 0.1.2:
 
  * FIXED BUG #15: Specifying source and/or destination files results in creation of directories where there should be files, on the client or server.
