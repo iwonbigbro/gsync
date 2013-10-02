@@ -15,8 +15,7 @@ setup(
     author_email = 'iwonbigbro@gmail.com',
     url = 'https://github.com/iwonbigbro/gsync',
     requires = [
-        'apiclient',
-        'apiclient.discovery',
+        'google-api-python-client',
         'cPickle',
         'dateutil',
         'docopt(>=0.6.0)',
