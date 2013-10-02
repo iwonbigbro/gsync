@@ -18,6 +18,7 @@ setup(
         'apiclient',
         'apiclient.discovery',
         'cPickle',
+        'dateutil',
         'docopt(>=0.6.0)',
         'httplib2',
         'json',
