@@ -35,7 +35,7 @@ class Crawler(object):
 
             if info and info.mimeType != MimeTypes.FOLDER:
                 debug("Source is not a directory, forcing dest file: %s" % (
-                    self._src
+                    repr(self._src)
                 ))
                 force_dest_file = True
         else:
@@ -45,7 +45,7 @@ class Crawler(object):
 
             if os.path.isfile(self._src):
                 debug("Source is not a directory, forcing dest file: %s" % (
-                    self._src
+                    repr(self._src)
                 ))
                 force_dest_file = True
 
@@ -58,14 +58,14 @@ class Crawler(object):
 
             if info and info.mimeType == MimeTypes.FOLDER:
                 debug("Dest is a directory, not forcing dest file: %s" % (
-                    self._dst
+                    repr(self._dst)
                 ))
                 force_dest_file = False
         else:
             self._dst = os.path.normpath(dst)
             if os.path.isdir(self._dst):
                 debug("Dest is a directory, not forcing dest file: %s" % (
-                    self._dst
+                    repr(self._dst)
                 ))
                 force_dest_file = False
 
@@ -91,7 +91,7 @@ class Crawler(object):
         if dev is not None:
             st_info = os.stat(path)
             if st_info.st_dev != dev:
-                debug("Not on same dev: %s" % path)
+                debug("Not on same dev: %s" % repr(path))
                 return False
 
         return True
@@ -99,17 +99,17 @@ class Crawler(object):
 
     def _walk(self, path, generator, dev):
         for d, dirs, files in generator(path):
-            debug("Walking: %s" % d)
+            debug("Walking: %s" % repr(d))
 
             if not self._devCheck(dev, d):
-                debug("Not on same device: %s" % d)
+                debug("Not on same device: %s" % repr(d))
                 continue
 
             if not GsyncOptions.force_dest_file:
                 if GsyncOptions.dirs or GsyncOptions.recursive:
 
                     # Sync the directory but not its contents
-                    debug("Synchronising directory: %s" % d)
+                    debug("Synchronising directory: %s" % repr(d))
                     self._sync(d)
                 else:
                     sys.stdout.write("skipping directory %s\n" % d)
@@ -120,7 +120,7 @@ class Crawler(object):
                 if not self._devCheck(dev, f):
                     continue
                     
-                debug("Synchronising file: %s" % f)
+                debug("Synchronising file: %s" % repr(f))
                 self._sync(f)
 
             if not GsyncOptions.recursive:
@@ -134,9 +134,9 @@ class Crawler(object):
         if self._drive.is_drivepath(self._src):
             basepath = self._drive.normpath(basepath)
 
-        debug("Source srcpath: %s" % srcpath)
-        debug("Source basepath: %s" % basepath)
-        debug("Source path: %s" % path)
+        debug("Source srcpath: %s" % repr(srcpath))
+        debug("Source basepath: %s" % repr(basepath))
+        debug("Source path: %s" % repr(path))
 
         if GsyncOptions.relative:
             # Supports the foo/./bar notation in rsync.
@@ -144,7 +144,7 @@ class Crawler(object):
 
         self._sync = Sync(basepath, self._dst)
 
-        debug("Enumerating: %s" % srcpath)
+        debug("Enumerating: %s" % repr(srcpath))
 
         try:
             self._walk(srcpath, self._walkCallback, self._dev)
@@ -155,7 +155,7 @@ class Crawler(object):
 
         except Exception, e:
             debug.exception(e)
-            print("Error: %s" % str(e))
+            print("Error: %s" % repr(e))
 
         finally:
             verbose("sent %d bytes  received %d bytes  %.2f bytes/sec" % (

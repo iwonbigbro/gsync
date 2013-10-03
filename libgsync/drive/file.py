@@ -37,8 +37,8 @@ class DriveFile(object):
         return self._dict[key]
 
     def __repr__(self):
-        return u"<DriveFile object '%s'>" % u" ".join([
-            u"%s=%s " % (k, v) for k, v in self._dict.iteritems()
-        ])
+        return "<DriveFile object %s>" % repr(" ".join([
+            "%s=%s " % (repr(k), repr(v)) for k, v in self._dict.iteritems()
+        ]))
 
 

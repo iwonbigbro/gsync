@@ -25,10 +25,10 @@ class SyncFileRemote(SyncFile):
         selfStripPath = self.strippath(self._path)
         stripPath = self.strippath(path)
 
-        debug("Joining: '%s' with '%s'" % (selfStripPath, stripPath))
+        debug("Joining: %s with %s" % (repr(selfStripPath), repr(stripPath)))
         ret = self.normpath(os.path.join(selfStripPath, stripPath))
 
-        debug(" * got: '%s'" % ret)
+        debug(" * got: %s" % repr(ret))
         return ret
 
     def getUploader(self, path = None):
@@ -39,7 +39,7 @@ class SyncFileRemote(SyncFile):
         path = self.getPath(path)
         drive = Drive()
 
-        debug("Opening remote file for reading: %s" % path)
+        debug("Opening remote file for reading: %s" % repr(path))
 
         f = drive.open(path, "r")
         if f is None:
@@ -50,31 +50,31 @@ class SyncFileRemote(SyncFile):
     def getInfo(self, path = None):
         path = self.getPath(path)
 
-        debug("Fetching remote file metadata: %s" % path)
+        debug("Fetching remote file metadata: %s" % repr(path))
 
         # The Drive() instance is self caching.
         drive = Drive()
 
         info = drive.stat(path)
         if info is None:
-            debug("File not found: %s" % path)
+            debug("File not found: %s" % repr(path))
             return None
 
-        debug("Remote file metadata = %s" % str(info))
+        debug("Remote file metadata = %s" % repr(info))
         info = SyncFileInfo(**info)
         debug("Remote mtime: %s" % info.modifiedDate)
 
         return info
 
     def _createDir(self, path, src = None):
-        debug("Creating remote directory: %s" % path)
+        debug("Creating remote directory: %s" % repr(path))
 
         if not GsyncOptions.dry_run:
             drive = Drive()
             drive.mkdir(path)
 
     def _createFile(self, path, src):
-        debug("Creating remote file: %s" % path)
+        debug("Creating remote file: %s" % repr(path))
 
         if GsyncOptions.dry_run: return
 
@@ -85,7 +85,7 @@ class SyncFileRemote(SyncFile):
             debug("Creation failed")
 
     def _updateFile(self, path, src):
-        debug("Updating remote file: %s" % path)
+        debug("Updating remote file: %s" % repr(path))
 
         totalBytesWritten = self.bytesWritten
         bytesWritten = 0
@@ -113,7 +113,7 @@ class SyncFileRemote(SyncFile):
         self.bytesWritten = totalBytesWritten + bytesWritten
 
     def _updateStats(self, path, src, mode, uid, gid, mtime, atime):
-        debug("Updating remote file stats: %s" % path)
+        debug("Updating remote file stats: %s" % repr(path))
 
         if GsyncOptions.dry_run: return
 

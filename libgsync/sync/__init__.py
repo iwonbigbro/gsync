@@ -34,18 +34,18 @@ class Sync(object):
                 verbose(changes[1])
                 
     def _sync(self, path):
-        debug("Synchronising: %s" % path)
+        debug("Synchronising: %s" % repr(path))
 
         relPath = self.src.relativeTo(path)
-        debug("Destination: %s" % self.dst)
-        debug("Relative: %s" % relPath)
+        debug("Destination: %s" % repr(self.dst))
+        debug("Relative: %s" % repr(relPath))
 
         srcFile = self.src.getInfo(relPath)
         if srcFile is None:
-            debug("File not found: %s" % path)
+            debug("File not found: %s" % repr(path))
             return None
 
-        debug("srcFile = %s" % srcFile)
+        debug("srcFile = %s" % repr(srcFile))
 
         folder = bool(srcFile.mimeType == MimeTypes.FOLDER)
         dstPath = None
@@ -62,15 +62,15 @@ class Sync(object):
             dstFile = self.dst.getInfo()
             dstPath = self.dst + ""
             relPath = os.path.basename(dstPath)
-            debug("Forcing destination file: %s" % dstPath)
+            debug("Forcing destination file: %s" % repr(dstPath))
 
         else:
             dstPath = self.dst + relPath
             dstFile = self.dst.getInfo(relPath)
-            debug("Defaulting destination directory: %s" % dstPath)
+            debug("Defaulting destination directory: %s" % repr(dstPath))
 
         if dstFile is None:
-            debug("File not found: %s" % dstPath)
+            debug("File not found: %s" % repr(dstPath))
         elif dstFile.mimeType != srcFile.mimeType:
             debug("Destination mimetype(%s) != source mimetype(%s)" % (
                 dstFile.mimeType, srcFile.mimeType
@@ -87,15 +87,15 @@ class Sync(object):
                     changes[4] = 't'
                     update = True
                 else:
-                    debug("File up to date: %s" % path)
+                    debug("File up to date: %s" % repr(path))
                     return None
 
             if srcFile.fileSize != dstFile.fileSize:
                 if folder:
-                    debug("Folder size differs, so what...?: %s" % path)
+                    debug("Folder size differs, so what...?: %s" % repr(path))
                     return None
 
-                debug("File size mismatch: %s" % path)
+                debug("File size mismatch: %s" % repr(path))
                 debug("    source size:      %d" % srcFile.fileSize)
                 debug("    destination size: %d" % dstFile.fileSize)
                 if GsyncOptions.append:
@@ -105,17 +105,17 @@ class Sync(object):
 
             if (not GsyncOptions.update and (update or create)) or srcFile.modifiedDate > dstFile.modifiedDate:
                 if folder:
-                    debug("Don't update folders unless --times: %s" % path)
+                    debug("Don't update folders unless --times: %s" % repr(path))
                     return None
 
-                debug("File timestamp mismatch: %s" % path)
+                debug("File timestamp mismatch: %s" % repr(path))
                 debug("    source mtime:      %d" % int(srcFile.modifiedDate))
                 debug("    destination mtime: %d" % int(dstFile.modifiedDate))
                 changes[4] = 'T'
                 update = True
 
             if not update and not create:
-                debug("File up to date: %s" % dstPath)
+                debug("File up to date: %s" % repr(dstPath))
                 return None
 
         if folder:
@@ -141,7 +141,9 @@ class Sync(object):
                 self.dst.create(dstPath, srcFile)
 
             elif GsyncOptions.ignore_existing:
-                debug("File exists on the receiver, skipping: %s" % path)
+                debug("File exists on the receiver, skipping: %s" % (
+                    repr(path)
+                ))
                 return None
 
             else:

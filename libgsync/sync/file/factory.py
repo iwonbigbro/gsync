@@ -7,14 +7,14 @@ from libgsync.drive import Drive
 class SyncFileFactory(object):
     @staticmethod
     def create(path):
-        debug("SyncFileFactory.create(%s)" % path)
+        debug("SyncFileFactory.create(%s)" % repr(path))
 
         drive = Drive()
 
         if drive.is_drivepath(path):
             filepath = drive.normpath(path)
 
-            debug("Creating SyncFileRemote(%s)" % filepath)
+            debug("Creating SyncFileRemote(%s)" % repr(filepath))
 
             from libgsync.sync.file.remote import SyncFileRemote
             return SyncFileRemote(filepath)
@@ -22,7 +22,7 @@ class SyncFileFactory(object):
         else:
             filepath = os.path.normpath(path)
 
-            debug("Creating SyncFileLocal(%s)" % filepath)
+            debug("Creating SyncFileLocal(%s)" % repr(filepath))
 
             from libgsync.sync.file.local import SyncFileLocal
             return SyncFileLocal(filepath)

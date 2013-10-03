@@ -165,7 +165,7 @@ if len(paths) > 1:
 try:
 
     for p in paths:
-        debug("Creating crawler for: %s" % p)
+        debug("Creating crawler for: %s" % repr(p))
         crawler = Crawler(p, dest)
         crawler.run()
 
@@ -173,8 +173,9 @@ except KeyboardInterrupt, e:
     sys.exit(1)
 
 except Exception, e:
-    print("Error: %s" % str(e))
+    print("Error: %s" % repr(e))
     debug.exception(e)
+    sys.exit(255)
 
 debug("Crawlers finished, exiting")
 

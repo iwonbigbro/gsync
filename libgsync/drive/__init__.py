@@ -42,7 +42,7 @@ class EFileNotFound(Exception):
         self.filename = filename
 
     def __str__(self):
-        return "File not found: %s" % self.filename
+        return "File not found: %s" % repr(self.filename)
 
 
 class DriveFileObject(object):
@@ -189,6 +189,33 @@ class _Drive():
         self._icache = {}
 
         debug("Initialisation complete")
+     
+    @staticmethod
+    def unicode(s):
+        # First see if we need to decode it...
+        su = None
+
+        if not isinstance(s, basestring):
+            s = unicode(str(s))
+
+        if isinstance(s, unicode):
+            su = s
+        else:
+            for enc in ("utf-8", "latin-1"):
+                try:
+                    su = s.decode(enc)
+                    break
+                except UnicodeDecodeError:
+                    pass
+
+        if su is None:
+            raise UnicodeDecodeError("Failed to decode: %s" % repr(s))
+
+        return su
+
+    @staticmethod
+    def utf8(s):
+        return _Drive.unicode(s).encode("utf-8")
 
     def service(self):
         if self._service is not None:
@@ -229,7 +256,7 @@ class _Drive():
         apistr = None
         if res.status in [ 200, 202 ]:
             # API expires every minute.
-            apistr = str(content)
+            apistr = content
 
         if not apistr:
             return None
@@ -308,7 +335,7 @@ class _Drive():
                     f.write(json.dumps(client_obj))
 
             except Exception, e:
-                debug("Exception: %s" % str(e))
+                debug("Exception: %s" % repr(e))
                 raise
 
         if not os.path.exists(client_json):
@@ -345,13 +372,13 @@ class _Drive():
         join = os.path.join
         names = None
 
-        debug("Walking: %s" % top)
+        debug("Walking: %s" % repr(top))
 
         try:
             names = self.listdir(top)
         except Exception, e:
             debug.exception()
-            debug("Exception: %s" % str(e))
+            debug("Exception: %s" % repr(e))
 
             if onerror is not None:
                 onerror(e)
@@ -411,19 +438,21 @@ class _Drive():
         return pathlist
 
     def _findEntity(self, name, ents):
-        debug("Iterating %d entities to find %s" % (len(ents), name))
+        debug("Iterating %d entities to find %s" % (len(ents), repr(name)))
+        name = _Drive.unicode(name)
         for ent in ents:
-            entname = ent.get('title', "")
+            entname = ent.get('title', u"")
 
+            debug("comparing %s to %s" % (repr(name), repr(entname)))
             if name == entname:
-                debug("Found %s" % name)
+                debug("Found %s" % repr(name))
                 return ent
 
         return None
 
     # TODO: Implement function for obtaining and caching properties.
     def _getProperties(self, ent):
-        debug("Fetching file properties: %s" % str(ent))
+        debug("Fetching file properties: %s" % repr(ent))
         return None
 
     def stat(self, path):
@@ -431,16 +460,16 @@ class _Drive():
         path = self.normpath(path)
 
         # If it is cached, we can obtain it there.
-        debug("Checking pcache for path: %s" % path)
-        ent = self._pcache.get(str(path))
+        debug("Checking pcache for path: %s" % repr(path))
+        ent = self._pcache.get(path)
 
         if ent is not None:
-            debug("Found path in path cache: %s" % path)
-            return DriveFile(path = path, **ent)
+            debug("Found path in path cache: %s" % repr(path))
+            return DriveFile(path = _Drive.unicode(path), **ent)
 
         # First list root and walk to the requested file from there.
         ent = DriveFile(
-            path = self.normpath('/'),
+            path = _Drive.unicode(self.normpath('/')),
             id = 'root',
             title = '/',
             mimeType = MimeTypes.FOLDER,
@@ -449,7 +478,7 @@ class _Drive():
 
         # User has requested root directory
         if self.is_rootpath(path):
-            debug("Path is root: %s" % path)
+            debug("Path is root: %s" % repr(path))
             return ent
 
         # Break down the path and enumerate each folder.
@@ -457,20 +486,22 @@ class _Drive():
         paths = self.pathlist(path)
         pathslen = len(paths)
 
-        debug("Got %d paths from pathlist(%s)" % (pathslen, path))
-        debug("Got paths: %s" % paths)
+        debug("Got %d paths from pathlist(%s)" % (pathslen, repr(path)))
+        debug("Got paths: %s" % repr(paths))
 
         for i in xrange(1, pathslen):
             searchpath = os.path.join(*paths[:i])
             searchname = paths[i]
-            search = str(os.path.join(searchpath, searchname))
+            search = os.path.join(searchpath, searchname)
 
-            debug("Searching for %s in path %s" % (searchname, searchpath))
+            debug("Searching for %s in path %s" % (
+                repr(searchname), repr(searchpath)
+            ))
 
             # First check our cache to see if we already have it.
             parentId = str(ent['id'])
 
-            debug("Checking pcache for path: %s" % search)
+            debug("Checking pcache for path: %s" % repr(search))
             ent = self._pcache.get(search)
             if ent is None:
                 debug(" * nothing found")
@@ -490,18 +521,18 @@ class _Drive():
 
             # Update path cache.
             if self._pcache.get(search) is None:
-                debug("Updating path cache: %s" % search)
+                debug("Updating path cache: %s" % repr(search))
                 self._pcache[search] = ent
 
             if search == path:
-                debug("Found %s" % search)
-                debug(" * ent: %s" % ent)
-                df = DriveFile(path = path, **ent)
+                debug("Found %s" % repr(search))
+                debug(" * ent: %s" % repr(ent))
+                df = DriveFile(path = _Drive.unicode(path), **ent)
 
                 if props is not None:
                     df.setProperties(props)
 
-                debug(" * returning %s" % df)
+                debug(" * returning %s" % repr(df))
                 return df
 
         # Finally, couldn't find anything, raise an error?
@@ -511,37 +542,39 @@ class _Drive():
         pass
     
     def mkdir(self, path):
-        debug("path = %s" % path)
+        debug("path = %s" % repr(path))
 
         self.validatepath(path)
 
         spath = self.strippath(path)
         normpath = self.normpath(spath)
 
-        debug("spath = %s" % spath)
-        debug("normpath = %s" % normpath)
+        debug("spath = %s" % repr(spath))
+        debug("normpath = %s" % repr(normpath))
 
         try:
             dirname, basename = os.path.split(normpath)
-            debug("dirname = '%s', basename = '%s'" % (dirname, basename))
+            debug("dirname = %s, basename = %s" % (
+                repr(dirname), repr(basename)
+            ))
             if dirname in [ "/", "drive:" ]:
                 parentId = "root"
             else:
                 parent = self.stat(dirname)
-                debug("Failed to stat directory: %s" % dirname)
+                debug("Failed to stat directory: %s" % repr(dirname))
 
                 if not parent:
                     if normpath != dirname:
                         parent = self.mkdir(dirname)
 
                     if not parent:
-                        debug("Failed to create parent: %s" % dirname)
+                        debug("Failed to create parent: %s" % repr(dirname))
                         return None
 
                 debug("Got parent: %s" % repr(parent))
                 parentId = parent.id
 
-            debug("Creating directory: %s" % normpath)
+            debug("Creating directory: %s" % repr(normpath))
  
             info = self.service().files().insert(
                 body = {
@@ -554,11 +587,11 @@ class _Drive():
             if info:
                 self._clearCache(path)
                 self._pcache[path] = info
-                ent = DriveFile(path = normpath, **info)
+                ent = DriveFile(path = _Drive.unicode(normpath), **info)
                 return ent
         except Exception, e:
             debug.exception()
-            debug("Failed to create directory: %s" % str(e))
+            debug("Failed to create directory: %s" % repr(e))
 
         raise IOError("Failed to create directory: %s" % path)
 
@@ -588,17 +621,17 @@ class _Drive():
 
         try:
             if skipTrash:
-                debug("Deleting: %s (id: %s)" % (path, info.id))
+                debug("Deleting: %s (id: %s)" % (repr(path), info.id))
                 self.service().files().delete(
                     fileId = info.id
                 ).execute()
             else:
-                debug("Trashing: %s (id: %s)" % (path, info.id))
+                debug("Trashing: %s (id: %s)" % (repr(path), info.id))
                 self.service().files().trash(
                     fileId = info.id
                 ).execute()
         except Exception, e:
-            debug("Deltion failed: %s" % str(e))
+            debug("Deltion failed: %s" % repr(e))
 
         self._clearCache(path)
 
@@ -617,10 +650,10 @@ class _Drive():
 
         body = {}
         for k, v in properties.iteritems():
-            body[k] = str(v)
+            body[k] = _Drive.utf8(v)
 
         # Retain the title from the path being created.
-        body['title'] = os.path.basename(path)
+        body['title'] = _Drive.utf8(os.path.basename(path))
 
         if parentId:
             body['parents'] = [{'id': parentId}]
@@ -637,7 +670,7 @@ class _Drive():
 
             return ent
         except Exception, e:
-            debug("Creation failed: %s" % str(e))
+            debug("Creation failed: %s" % repr(e))
 
         return None
 
@@ -649,18 +682,20 @@ class _Drive():
         info = self.stat(path)
 
         if not info:
-            debug("No such file: %s" % path)
+            debug("No such file: %s" % repr(path))
             return None
 
-        debug("Updating: %s" % info)
+        debug("Updating: %s" % repr(info))
 
         # Merge properties
         for k, v in properties.iteritems():
             # Do not update the ID, always use the path obtained ID.
             if k == 'id': continue
 
-            debug(" * with: %s = %s" % (k, v))
-            setattr(info, k, v)
+            debug(" * with: %s = %s" % (repr(k), repr(v)))
+            setattr(info, k, _Drive.utf8(v))
+
+        debug("mdeia_body type = %s" % type(media_body))
 
         try:
             req = self.service().files().update(
@@ -674,24 +709,31 @@ class _Drive():
                 return req.execute()
 
             else:
-                res = None
+                status, res = None, None
                 while res is None:
                     debug(" * uploading next chunk...")
-                    status, res = req.next_chunk()
+
+                    try:
+                        status, res = req.next_chunk()
+                    except Exception, e:
+                        debug("Exception: %s" % str(e))
+                        debug.exception()
+                        break
+
                     if status:
                         progress_callback(status)
 
                 return res
 
         except Exception, e:
-            debug("Update failed: %s" % str(e))
-            debug.stack()
-            return None
+            debug("Update failed: %s" % repr(e))
+            debug.exception()
+            raise
     
     def _clearCache(self, path):
-        debug("Clearing path cache entries for '%s'..." % path)
+        debug("Clearing path cache entries for '%s'..." % repr(path))
         if self._pcache.get(path):
-            debug("    * delting: %s" % path)
+            debug("    * delting: %s" % repr(path))
             del self._pcache[path]
 
         info = self.stat(path)
@@ -749,7 +791,7 @@ class _Drive():
             if page_token:
                 param['pageToken'] = page_token
 
-            debug("Executing query: %s" % str(param))
+            debug("Executing query: %s" % repr(param))
 
             files = service.files().list(**param).execute()
 

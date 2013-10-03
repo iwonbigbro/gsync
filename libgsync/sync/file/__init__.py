@@ -107,7 +107,7 @@ class SyncFileInfo(object):
             self._setStatInfo(value)
             return
 
-        debug("Setting: %s = %s" % (name, str(value)))
+        debug("Setting: %s = %s" % (repr(name), repr(value)))
 
         self._dict[name] = value
 
@@ -150,7 +150,7 @@ class SyncFileInfo(object):
             return
 
         if isinstance(value, unicode):
-            value = str(value)
+            value = value.encode("utf8")
 
         if isinstance(value, str):
             # First decode using new base64 compressed method.
@@ -160,7 +160,7 @@ class SyncFileInfo(object):
                 self._dict['description'] = value
                 return
             except Exception, e:
-                debug("Base 64 decode failed: %s" % str(e))
+                debug("Base 64 decode failed: %s" % repr(e))
                 pass
 
             # That failed, try to decode using old hex encoding.
@@ -169,10 +169,10 @@ class SyncFileInfo(object):
                 self._dict['description'] = value
                 return
             except Exception, e:
-                debug("Hex decode failed: %s" % str(e))
+                debug("Hex decode failed: %s" % repr(e))
                 pass
 
-            debug("Failed to decode string: '%s'" % value)
+            debug("Failed to decode string: %s" % repr(value))
             return
 
         raise EInvalidStatInfoType(type(value))
@@ -184,7 +184,10 @@ class SyncFile(object):
     bytesWritten = 0
 
     def __init__(self, path):
-        self._path = str(path)
+        if isinstance(path, SyncFile):
+            self._path = path._path
+        else:
+            self._path = path
 
     def __str__(self):
         return self._path
@@ -195,7 +198,7 @@ class SyncFile(object):
     def getPath(self, path = None):
         if not path: return self._path
 
-        debug("Joining: '%s' with '%s'" % (self._path, path))
+        debug("Joining: %s with %s" % (repr(self._path), repr(path)))
         return os.path.join(self._path, path)
 
     def getUploader(self, path = None):
@@ -240,7 +243,7 @@ class SyncFile(object):
         if src is None: return
 
         srcInfo = src.getInfo()
-        debug("srcInfo = %s" % srcInfo)
+        debug("srcInfo = %s" % repr(srcInfo))
         srcStatInfo = srcInfo.statInfo
 
         mode, uid, gid, atime, mtime = None, None, None, None, None
@@ -276,7 +279,7 @@ class SyncFile(object):
     def _normaliseSource(self, src):
         srcPath, srcObj, srcInfo = None, None, None
 
-        debug("src = %s" % str(src))
+        debug("src = %s" % repr(src))
         debug("type(src) = %s" % type(src))
 
         if src is not None:
@@ -334,7 +337,9 @@ class SyncFile(object):
         expr = r'^%s+' % path
         relpath = self.normpath(relpath)
 
-        debug("Creating relative path from %s and %s" % (repr(expr), relpath))
+        debug("Creating relative path from %s and %s" % (
+            repr(expr), repr(relpath)
+        ))
         return os.path.normpath(re.sub(expr, "", relpath + "/"))
 
     def isremote(self):

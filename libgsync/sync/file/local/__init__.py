@@ -27,7 +27,7 @@ class SyncFileLocal(SyncFile):
     def getInfo(self, path = None):
         path = self.getPath(path)
 
-        debug("Fetching local file metadata: %s" % path)
+        debug("Fetching local file metadata: %s" % repr(path))
 
         try:
             # Obtain the file info, following the link
@@ -52,7 +52,7 @@ class SyncFileLocal(SyncFile):
                 path=path
             )
         except OSError, e:
-            debug("File not found: %s" % path)
+            debug("File not found: %s" % repr(path))
             return None
 
         debug("Local mtime: %s" % info.modifiedDate)
@@ -60,7 +60,7 @@ class SyncFileLocal(SyncFile):
         return info
 
     def _updateStats(self, path, src, mode, uid, gid, mtime, atime):
-        debug("Updating local file stats: %s" % path)
+        debug("Updating local file stats: %s" % repr(path))
 
         if GsyncOptions.dry_run: return
 
@@ -85,7 +85,7 @@ class SyncFileLocal(SyncFile):
             os.utime(path, (atime, mtime))
 
     def _createDir(self, path, src = None):
-        debug("Creating local directory: %s" % path)
+        debug("Creating local directory: %s" % repr(path))
 
         if not GsyncOptions.dry_run:
             os.mkdir(path)
@@ -93,14 +93,14 @@ class SyncFileLocal(SyncFile):
     def _createFile(self, path, src):
         path = self.getPath(path)
 
-        debug("Creating local file: %s" % path)
+        debug("Creating local file: %s" % repr(path))
 
         f = None
         try:
             if not GsyncOptions.dry_run:
                 f = open(path, "w")
         except Exception, e:
-            debug("Creation failed: %s" % str(e))
+            debug("Creation failed: %s" % repr(e))
         finally:
             if f is not None: f.close()
 
@@ -108,7 +108,7 @@ class SyncFileLocal(SyncFile):
         path = self.getPath(path)
         info = self.getInfo(path)
 
-        debug("Updating local file %s" % path)
+        debug("Updating local file %s" % repr(path))
 
         uploader = src.getUploader()
 
@@ -150,7 +150,7 @@ class SyncFileLocal(SyncFile):
             raise
 
         except Exception, e:
-            debug("Write failed: %s" % str(e))
+            debug("Write failed: %s" % repr(e))
             raise
 
         finally:
