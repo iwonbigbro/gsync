@@ -1,4 +1,4 @@
-GSync 0.1.3 - 30 Sep 2013
+GSync 0.1.4 - 30 Sep 2013
 
 Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
@@ -62,18 +62,7 @@ RSync options implemented so far:
  -i, --itemize-changes       output a change-summary for all updates
      --progress              show progress during transfer
 
-To do:
-------
+For a list of known issues:
+---------------------------
 
- * Better handling of resumable uploads (--append).
-
- * Improved file attribute handling using Google Drive file attributes data.
-
-Issues:
--------
-
- * Append mode doesn't work, this is not supported by Google Drive.  May be able
-   to work around it by caching the resumable upload ID somewhere locally when
-   a file is being synchronised.
- 
- * Some features still not implemented.
+https://github.com/iwonbigbro/gsync/issues?state=open

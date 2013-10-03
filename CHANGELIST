@@ -1,3 +1,9 @@
+gsync 0.1.4:
+
+ * FIXED: setuptools used in place of distutils, meaning easier installation.
+
+ * FIXED BUG #19: Latin-1 file names are not supported and throw exceptions.
+
 gsync 0.1.3:
 
  * FIXED BUG #17 and #18: Does not obey --recursive option anymore.
