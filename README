@@ -36,13 +36,19 @@ http://mud-slide.blogspot.co.uk/
 Installation:
 -------------
 
-The GSync package is now available on pypi.python.org.  Installing using pypi-install will mean that dependencies will be automatically resolved, alleviating the need to resolve dependencies and download packages yourself.  You should be able to install using easy_install:
-
-    $ sudo easy_install --verbose gsync
-
-On debian, you can install the easy_install utility via the python-setuptools package:
+The GSync package is now available on pypi.python.org.  It can be installed using
+pip.  I recommend using pip over easy_install or pypi-install, since pip takes care
+of dependencies through setuptools.  I have found that easy_install only checks for
+dependencies but doesn't actually install them.  On Debian I installed using the
+following steps:
 
     $ sudo apt-get install python-setuptools
+    $ sudo easy_install --install pip
+    $ sudo pip install gsync
+
+To upgrade gsync, you can run pip with the --upgrade option:
+
+    $ sudo pip install --upgrade gsync
 
 That's it.  GSync will be installed along with any required packages.
 
