@@ -1,6 +1,6 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
-import os, re
+import os, re, datetime
 from libgsync.output import verbose, debug, itemize, Progress
 from libgsync.sync.file import SyncFile, SyncFileInfo
 from libgsync.options import GsyncOptions
@@ -134,5 +134,12 @@ class SyncFileRemote(SyncFile):
             st_info[8] = mtime
         
         info._setStatInfo(st_info)
+
+        mtime_utc = datetime.datetime.utcfromtimestamp(mtime).isoformat()
             
-        Drive().update(path, { 'description': info.description })
+        Drive().update(path, properties = {
+            'description': info.description,
+            'modifiedDate': mtime_utc,
+        }, options = {
+            'setModifiedDate': GsyncOptions.times
+        })

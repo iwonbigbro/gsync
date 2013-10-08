@@ -82,11 +82,8 @@ class Sync(object):
         else:
             changes = bytearray("...........")
 
-            if GsyncOptions.times:
-                if (not GsyncOptions.update or folder) and srcFile != dstFile:
-                    changes[4] = 't'
-                    update = True
-                else:
+            if GsyncOptions.update:
+                if srcFile.modifiedDate <= dstFile.modifiedDate:
                     debug("File up to date: %s" % repr(path))
                     return None
 
@@ -98,21 +95,57 @@ class Sync(object):
                 debug("File size mismatch: %s" % repr(path))
                 debug("    source size:      %d" % srcFile.fileSize)
                 debug("    destination size: %d" % dstFile.fileSize)
+
                 if GsyncOptions.append:
                     update = True
                 else:
                     create = True
 
-            if (not GsyncOptions.update and (update or create)) or srcFile.modifiedDate > dstFile.modifiedDate:
-                if folder:
-                    debug("Don't update folders unless --times: %s" % repr(path))
+                changes[3] = 's'
+
+            if srcFile.modifiedDate >= dstFile.modifiedDate:
+                if folder and not GsyncOptions.times:
+                    debug("Don't update folders unless --times: %s" % 
+                        repr(path))
                     return None
 
                 debug("File timestamp mismatch: %s" % repr(path))
                 debug("    source mtime:      %d" % int(srcFile.modifiedDate))
                 debug("    destination mtime: %d" % int(dstFile.modifiedDate))
-                changes[4] = 'T'
-                update = True
+                
+                if GsyncOptions.times:
+                    changes[4] = 't'
+                else:
+                    changes[4] = 'T'
+
+                update = (srcFile.modifiedDate > dstFile.modifiedDate)
+
+            elif GsyncOptions.update:
+                debug("Skipping, dest file is newer: %s" % repr(dstPath))
+                return None
+
+            if update or create:
+                if srcFile.statInfo and dstFile.statInfo:
+                    dstSt = dstFile.statInfo
+                    srcSt = srcFile.statInfo
+
+                    if GsyncOptions.perms and dstSt.st_mode != srcSt.st_mode:
+                        changes[5] = 'p'
+
+                    if GsyncOptions.owner and dstSt.st_uid != srcSt.st_uid:
+                        changes[6] = 'o'
+                    
+                    if GsyncOptions.group and dstSt.st_gid != srcSt.st_gid:
+                        changes[7] = 'g'
+
+                if srcFile.modifiedTime != dstFile.modifiedTime:
+                    if GsyncOptions.times:
+                        changes[4] = 't'
+                    else:
+                        changes[4] = 'T'
+
+            # TODO: Check acl = changes[9] = 'a'
+            # TODO: Check extended attributes = changes[10] = 'x'
 
             if not update and not create:
                 debug("File up to date: %s" % repr(dstPath))
@@ -146,8 +179,9 @@ class Sync(object):
                 ))
                 return None
 
-            else:
+            elif update:
                 self.dst.update(dstPath, srcFile)
+
         except KeyboardInterrupt, e:
             debug("Interrupted")
             raise

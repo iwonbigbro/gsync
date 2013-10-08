@@ -677,7 +677,8 @@ class _Drive():
     def update(self,
         path, properties,
         media_body = None,
-        progress_callback = None
+        progress_callback = None,
+        options = {}
     ):
         info = self.stat(path)
 
@@ -701,6 +702,7 @@ class _Drive():
             req = self.service().files().update(
                 fileId = info.id,
                 body = info.dict(),
+                setModifiedDate = options.get('setModifiedDate', False),
                 newRevision = True,
                 media_body = media_body
             )

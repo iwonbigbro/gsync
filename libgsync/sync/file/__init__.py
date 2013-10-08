@@ -263,11 +263,11 @@ class SyncFile(object):
                     debug("Updating with gid: %d" % gid)
 
         if GsyncOptions.times:
+            mtime = float(srcInfo.modifiedDate)
+
             if srcStatInfo is not None:
-                mtime = srcStatInfo.st_mtime
                 atime = srcStatInfo.st_atime
             else:
-                mtime = float(srcInfo.modifiedDate)
                 atime = mtime
 
             debug("Updating with mtime: %0.2f" % mtime)
