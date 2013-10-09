@@ -103,22 +103,34 @@ class Sync(object):
 
                 changes[3] = 's'
 
+            elif GsyncOptions.checksum:
+                if srcFile.md5Checksum != dstFile.md5Checksum:
+                    debug("File checksum mismatch: %s" % repr(path))
+                    debug("    source md5:      %s" % srcFile.md5Checksum)
+                    debug("    destination md5: %s" % dstFile.md5Checksum)
+
+                    changes[2] = 'c'
+                    update = True
+
             if srcFile.modifiedDate >= dstFile.modifiedDate:
                 if folder and not GsyncOptions.times:
                     debug("Don't update folders unless --times: %s" % 
                         repr(path))
                     return None
 
-                debug("File timestamp mismatch: %s" % repr(path))
-                debug("    source mtime:      %d" % int(srcFile.modifiedDate))
-                debug("    destination mtime: %d" % int(dstFile.modifiedDate))
+                if srcFile.modifiedDate > dstFile.modifiedDate:
+                    debug("File timestamp mismatch: %s" % repr(path))
+                    debug("    source mtime:      %d" %
+                        int(srcFile.modifiedDate))
+                    debug("    destination mtime: %d" %
+                        int(dstFile.modifiedDate))
                 
-                if GsyncOptions.times:
-                    changes[4] = 't'
-                else:
-                    changes[4] = 'T'
+                    if GsyncOptions.times:
+                        changes[4] = 't'
+                    else:
+                        changes[4] = 'T'
 
-                update = (srcFile.modifiedDate > dstFile.modifiedDate)
+                    update = True
 
             elif GsyncOptions.update:
                 debug("Skipping, dest file is newer: %s" % repr(dstPath))

@@ -39,6 +39,10 @@ class SyncFileLocal(SyncFile):
             else:
                 mimeType = MimeTypes.get(path)
 
+            md5Checksum = None
+            if GsyncOptions.checksum:
+                md5Checksum = self._md5Checksum(path)
+
             info = SyncFileInfo(
                 None,
                 filename,
@@ -46,9 +50,9 @@ class SyncFileLocal(SyncFile):
                     st_info.st_mtime
                 ).isoformat(),
                 mimeType,
-                description=st_info,
-                fileSize=st_info.st_size,
-                checksum="TODO:checksum",
+                description = st_info,
+                fileSize = st_info.st_size,
+                md5Checksum = md5Checksum,
                 path=path
             )
         except OSError, e:
@@ -83,6 +87,20 @@ class SyncFileLocal(SyncFile):
         if mtime is None: mtime = atime
         if mtime is not None:
             os.utime(path, (atime, mtime))
+
+    def _md5Checksum(self, path):
+        try:
+            import hashlib
+            m = hashlib.md5()
+
+            with open(path, "r") as f:
+                m.update(f.read())
+                return m.hexdigest()
+
+        except Exception, e:
+            debug.exception()
+            debug("Exception: %s" % repr(e))
+            return None
 
     def _createDir(self, path, src = None):
         debug("Creating local directory: %s" % repr(path))

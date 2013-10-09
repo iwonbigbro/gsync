@@ -42,6 +42,7 @@ Options:
  -v, --verbose               enable verbose output
      --debug                 enable debug output
  -q, --quiet                 suppress non-error messages
+ -c, --checksum              skip based on checksum, not mod-time & size
  -r, --recursive             recurse into directories
  -R, --relative              use relative path names
      --no-implied-dirs       don't send implied dirs with --relative
