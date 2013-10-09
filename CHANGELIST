@@ -1,3 +1,9 @@
+gsync 0.1.5:
+
+ * FEATURE #12: Implement --checksum option.
+
+ * FIXED BUG #22: Modification time is not being set to match the source file modification time when used with --times 
+
 gsync 0.1.4:
 
  * FIXED: setuptools used in place of distutils, meaning easier installation.
