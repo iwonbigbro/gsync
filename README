@@ -1,5 +1,3 @@
-GSync 0.1.8 - 16 October 2013
-
 Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
 Google currently don't produce a Linux variant of their client for Google-Drive.
@@ -22,25 +20,25 @@ The only prerequisite is that you have python.  The makefile will take care of
 installing any required python libraries using pip, which will also be obtained.
 
 Donations:
--------
+===============================================================================
 
 If you like the software, don't forget to donate to further development of it!
 
 https://github.com/iwonbigbro/gsync/wiki/Donate
 
 My Blog:
---------
+===============================================================================
 
 http://mud-slide.blogspot.co.uk/
 
 Installation:
--------------
+===============================================================================
 
-The GSync package is now available on pypi.python.org.  It can be installed using
-pip.  I recommend using pip over easy_install or pypi-install, since pip takes care
-of dependencies through setuptools.  I have found that easy_install only checks for
-dependencies but doesn't actually install them.  On Debian I installed using the
-following steps:
+The GSync package is now available on pypi.python.org.  It can be installed
+using pip.  I recommend using pip over easy_install or pypi-install, since pip
+takes care of dependencies through setuptools.  I have found that easy_install
+only checks for dependencies but doesn't actually install them.  On Debian I
+installed using the following steps:
 
     $ sudo apt-get install python-setuptools
     $ sudo easy_install pip
@@ -53,7 +51,7 @@ To upgrade gsync, you can run pip with the --upgrade option:
 That's it.  GSync will be installed along with any required packages.
 
 RSync options implemented so far:
----------------------------------
+===============================================================================
 
  -v, --verbose               enable verbose output
      --debug                 enable debug output
@@ -70,6 +68,6 @@ RSync options implemented so far:
      --progress              show progress during transfer
 
 For a list of known issues:
----------------------------
+===============================================================================
 
 https://github.com/iwonbigbro/gsync/issues?state=open
