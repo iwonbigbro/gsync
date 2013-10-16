@@ -219,7 +219,7 @@ class SyncFile(object):
     def _updateFile(self, path, src):
         raise ESyncFileAbstractMethod
 
-    def _updateStats(self, path, src, mode, uid, gid, atime, mtime):
+    def _updateStats(self, path, src, mode, uid, gid, mtime, atime):
         raise ESyncFileAbstractMethod
 
     def __createFile(self, path, src = None):
@@ -273,7 +273,7 @@ class SyncFile(object):
             debug("Updating with mtime: %0.2f" % mtime)
             debug("Updating with atime: %0.2f" % atime)
 
-        self._updateStats(path, src, mode, uid, gid, atime, mtime)
+        self._updateStats(path, src, mode, uid, gid, mtime, atime)
 
 
     def _normaliseSource(self, src):

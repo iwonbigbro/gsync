@@ -130,11 +130,10 @@ class SyncFileRemote(SyncFile):
             st_info[5] = gid
         if atime is not None:
             st_info[7] = atime
-        if mtime is not None:
-            st_info[8] = mtime
         
         info._setStatInfo(st_info)
 
+        debug("mtime = %s" % repr(mtime))
         mtime_utc = datetime.datetime.utcfromtimestamp(mtime).isoformat()
             
         Drive().update(path, properties = {
