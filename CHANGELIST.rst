@@ -1,3 +1,9 @@
+    New in version 0.1.9:
+
+    - Some improvements to README documentation.
+
+    - Better dependency specifications in setup.py.
+
     New in version 0.1.8:
 
     - FIXED BUG #26: Error: TypeError('a float is required',)
