@@ -9,12 +9,11 @@ class _GsyncOptions(type):
 
         from docopt import docopt
         from libgsync.options import doc
-        from libgsync import get_version
+        from libgsync import __version__
 
-        version = get_version()
         options = docopt(
-            doc.__doc__ % version,
-            version = version,
+            doc.__doc__ % __version__,
+            version = __version__,
             options_first = True
         )
 
