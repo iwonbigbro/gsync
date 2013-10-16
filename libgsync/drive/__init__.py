@@ -233,8 +233,7 @@ class _Drive():
         debug("Authenticating")
         import httplib2
 
-        if debug.enabled():
-            httplib2.debuglevel = 4
+        #if debug.enabled(): httplib2.debuglevel = 4
 
         http = credentials.authorize(
             httplib2.Http(cache = self._getConfigDir("http_cache"))
