@@ -50,20 +50,12 @@ class SyncFileInfoDatetime(object):
         except Exception, e:
             return getattr(self.__d, name)
 
-    def __repr__(self): return "SyncFileInfoDatetime('%s')" % str(self)
+    def __repr__(self): return "SyncFileInfoDatetime(%s)" % repr(self.__d)
     def __str__(self): return self.__d.strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
     def __secs(self): return (self.__d - self.__epoch).total_seconds()
     def __int__(self): return int(self.__secs())
     def __long__(self): return long(self.__secs())
     def __float__(self): return float(self.__secs())
-    def __sub__(self, d): return self.__d - self.__(d)
-    def __cmp__(self, d): return int(self.__d) - self.__(d)
-    def __lt__(self, d): return (self.__d < self.__(d))
-    def __le__(self, d): return (self.__d <= self.__(d))
-    def __eq__(self, d): return (self.__d == self.__(d))
-    def __ne__(self, d): return (self.__d != self.__(d))
-    def __gt__(self, d): return (self.__d > self.__(d))
-    def __ge__(self, d): return (self.__d >= self.__(d))
 
 
 class SyncFileInfo(object):
@@ -115,17 +107,9 @@ class SyncFileInfo(object):
         return self._dict[name]
 
     def __repr__(self):
-        return """SyncFileInfo(
-    id = "%(id)s",
-    title = "%(title)s",
-    modifiedDate = "%(modifiedDate)s",
-    mimeType = "%(mimeType)s",
-    fileSize = %(fileSize)d,
-    md5Checksum = %(md5Checksum)s",
-    description = "%(description)s",
-    statInfo = %(statInfo)s,
-    path = %(path)s
-)""" % self._dict
+        return "SyncFileInfo(%s)" % ", ".join([
+            "%s = %s" % (repr(k), repr(v)) for k, v in self._dict.iteritems()
+        ])
 
     def _setStatInfo(self, value):
         if value is None:
@@ -264,14 +248,16 @@ class SyncFile(object):
 
         if GsyncOptions.times:
             mtime = float(srcInfo.modifiedDate)
+        else:
+            mtime = float(time.time())
 
-            if srcStatInfo is not None:
-                atime = srcStatInfo.st_atime
-            else:
-                atime = mtime
+        if srcStatInfo is not None:
+            atime = srcStatInfo.st_atime
+        else:
+            atime = mtime
 
-            debug("Updating with mtime: %0.2f" % mtime)
-            debug("Updating with atime: %0.2f" % atime)
+        debug("Updating with mtime: %0.2f" % mtime)
+        debug("Updating with atime: %0.2f" % atime)
 
         self._updateStats(path, src, mode, uid, gid, mtime, atime)
 

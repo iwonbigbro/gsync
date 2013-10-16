@@ -5,8 +5,8 @@
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
 BINARY_FILE	libgsync/drive/mimetypes.py	/^    BINARY_FILE = "application\/octet-stream"$/;"	v	class:MimeTypes
-Channel	libgsync/output.py	/^class Channel():$/;"	c
-Crawler	libgsync/crawler.py	/^class Crawler(Thread):$/;"	c
+Channel	libgsync/output.py	/^class Channel(object):$/;"	c
+Crawler	libgsync/crawler.py	/^class Crawler(object):$/;"	c
 Debug	libgsync/output.py	/^class Debug(Channel):$/;"	c
 Drive	libgsync/drive/__init__.py	/^def Drive():$/;"	f
 DriveFile	libgsync/drive/file.py	/^class DriveFile(object):$/;"	c
@@ -23,10 +23,11 @@ ESyncFileAbstractMethod	libgsync/sync/__init__.py	/^class ESyncFileAbstractMetho
 ESyncFileAbstractMethod	libgsync/sync/file/__init__.py	/^class ESyncFileAbstractMethod(Exception):$/;"	c
 EUnknownSourceType	libgsync/sync/file/__init__.py	/^class EUnknownSourceType(Exception):$/;"	c
 FOLDER	libgsync/drive/mimetypes.py	/^    FOLDER = "application\/vnd.google-apps.folder"$/;"	v	class:MimeTypes
-GsyncOptions	libgsync/options.py	/^class GsyncOptions():$/;"	c
+GsyncOptions	libgsync/options/__init__.py	/^class GsyncOptions(object):$/;"	c
 Itemize	libgsync/output.py	/^class Itemize(object):$/;"	c
 MimeTypes	libgsync/drive/mimetypes.py	/^class MimeTypes(object):$/;"	c
 NONE	libgsync/drive/mimetypes.py	/^    NONE = "none\/unknown-mimetype"$/;"	v	class:MimeTypes
+Progress	libgsync/output.py	/^class Progress(object):$/;"	c
 Sync	libgsync/sync/__init__.py	/^class Sync(object):$/;"	c
 SyncFile	libgsync/sync/file/__init__.py	/^class SyncFile(object):$/;"	c
 SyncFileFactory	libgsync/sync/file/factory.py	/^class SyncFileFactory(object):$/;"	c
@@ -34,14 +35,17 @@ SyncFileInfo	libgsync/sync/file/__init__.py	/^class SyncFileInfo(object):$/;"	c
 SyncFileInfoDatetime	libgsync/sync/file/__init__.py	/^class SyncFileInfoDatetime(object):$/;"	c
 SyncFileLocal	libgsync/sync/file/local/__init__.py	/^class SyncFileLocal(SyncFile):$/;"	c
 SyncFileRemote	libgsync/sync/file/remote/__init__.py	/^class SyncFileRemote(SyncFile):$/;"	c
-VERSION	libgsync/version.py	/^VERSION = '0.1.0'$/;"	v
+VERSION	libgsync/version.py	/^VERSION = '0.1.7'$/;"	v
 Verbose	libgsync/output.py	/^class Verbose(Channel):$/;"	c
 _Drive	libgsync/drive/__init__.py	/^class _Drive():$/;"	c
+_GsyncListOptions	libgsync/options/__init__.py	/^class _GsyncListOptions(object):$/;"	c
+_GsyncOptions	libgsync/options/__init__.py	/^class _GsyncOptions(type):$/;"	c
 __	libgsync/sync/file/__init__.py	/^    def __(self, d):$/;"	m	class:SyncFileInfoDatetime	file:
 __add__	libgsync/sync/file/__init__.py	/^    def __add__(self, path):$/;"	m	class:SyncFile	file:
 __call__	libgsync/bind.py	/^    def __call__(self, *args):$/;"	m	class:bind	file:
 __call__	libgsync/output.py	/^    def __call__(self, changes, filename):$/;"	m	class:Itemize	file:
 __call__	libgsync/output.py	/^    def __call__(self, msg, priority = 1):$/;"	m	class:Channel	file:
+__call__	libgsync/output.py	/^    def __call__(self, status):$/;"	m	class:Progress	file:
 __call__	libgsync/sync/__init__.py	/^    def __call__(self, path):$/;"	m	class:Sync	file:
 __cmp__	libgsync/sync/file/__init__.py	/^    def __cmp__(self, d): return int(self.__d) - self.__(d)$/;"	m	class:SyncFileInfoDatetime	file:
 __createDir	libgsync/sync/file/__init__.py	/^    def __createDir(self, path, src = None):$/;"	m	class:SyncFile	file:
@@ -53,17 +57,20 @@ __eq__	libgsync/sync/file/__init__.py	/^    def __eq__(self, d): return (self.__
 __float__	libgsync/sync/file/__init__.py	/^    def __float__(self): return float(self.__secs())$/;"	m	class:SyncFileInfoDatetime	file:
 __ge__	libgsync/sync/file/__init__.py	/^    def __ge__(self, d): return (self.__d >= self.__(d))$/;"	m	class:SyncFileInfoDatetime	file:
 __getattr__	libgsync/drive/file.py	/^    def __getattr__(self, key):$/;"	m	class:DriveFile	file:
+__getattr__	libgsync/options/__init__.py	/^    def __getattr__(self, name):$/;"	m	class:_GsyncOptions	file:
 __getattr__	libgsync/sync/file/__init__.py	/^    def __getattr__(self, name):$/;"	m	class:SyncFileInfo	file:
 __getattr__	libgsync/sync/file/__init__.py	/^    def __getattr__(self, name):$/;"	m	class:SyncFileInfoDatetime	file:
 __getitem__	libgsync/drive/file.py	/^    def __getitem__(self, key):$/;"	m	class:DriveFile	file:
 __getitem__	libgsync/sync/file/__init__.py	/^    def __getitem__(self, name):$/;"	m	class:SyncFileInfo	file:
 __gt__	libgsync/sync/file/__init__.py	/^    def __gt__(self, d): return (self.__d > self.__(d))$/;"	m	class:SyncFileInfoDatetime	file:
+__init	libgsync/options/__init__.py	/^    def __init(self):$/;"	m	class:_GsyncOptions	file:
 __init__	libgsync/bind.py	/^    def __init__(self, func, context, *args):$/;"	m	class:bind
 __init__	libgsync/crawler.py	/^    def __init__(self, src, dst):$/;"	m	class:Crawler
 __init__	libgsync/drive/__init__.py	/^    def __init__(self):$/;"	m	class:_Drive
 __init__	libgsync/drive/__init__.py	/^    def __init__(self, filename):$/;"	m	class:EFileNotFound
 __init__	libgsync/drive/__init__.py	/^    def __init__(self, path, mode = "r"):$/;"	m	class:DriveFileObject
 __init__	libgsync/drive/file.py	/^    def __init__(self, **kwargs):$/;"	m	class:DriveFile
+__init__	libgsync/output.py	/^    def __init__(self, enableOutput = True, callback = None):$/;"	m	class:Progress
 __init__	libgsync/sync/__init__.py	/^    def __init__(self, src, dst):$/;"	m	class:Sync
 __init__	libgsync/sync/file/__init__.py	/^    def __init__(self, datestring):$/;"	m	class:SyncFileInfoDatetime
 __init__	libgsync/sync/file/__init__.py	/^    def __init__(self, id, title, modifiedDate, mimeType,$/;"	m	class:SyncFileInfo
@@ -74,11 +81,13 @@ __int__	libgsync/sync/file/__init__.py	/^    def __int__(self): return int(self.
 __le__	libgsync/sync/file/__init__.py	/^    def __le__(self, d): return (self.__d <= self.__(d))$/;"	m	class:SyncFileInfoDatetime	file:
 __long__	libgsync/sync/file/__init__.py	/^    def __long__(self): return long(self.__secs())$/;"	m	class:SyncFileInfoDatetime	file:
 __lt__	libgsync/sync/file/__init__.py	/^    def __lt__(self, d): return (self.__d < self.__(d))$/;"	m	class:SyncFileInfoDatetime	file:
+__metaclass__	libgsync/options/__init__.py	/^    __metaclass__ = _GsyncOptions$/;"	v	class:GsyncOptions
 __ne__	libgsync/sync/file/__init__.py	/^    def __ne__(self, d): return (self.__d != self.__(d))$/;"	m	class:SyncFileInfoDatetime	file:
 __repr__	libgsync/drive/file.py	/^    def __repr__(self):$/;"	m	class:DriveFile	file:
 __repr__	libgsync/sync/file/__init__.py	/^    def __repr__(self): return "SyncFileInfoDatetime('%s')" % str(self)$/;"	m	class:SyncFileInfoDatetime	file:
 __repr__	libgsync/sync/file/__init__.py	/^    def __repr__(self):$/;"	m	class:SyncFileInfo	file:
 __secs	libgsync/sync/file/__init__.py	/^    def __secs(self): return (self.__d - self.__epoch).total_seconds()$/;"	m	class:SyncFileInfoDatetime	file:
+__setattr__	libgsync/options/__init__.py	/^    def __setattr__(self, name, value):$/;"	m	class:_GsyncOptions	file:
 __setattr__	libgsync/sync/file/__init__.py	/^    def __setattr__(self, name, value):$/;"	m	class:SyncFileInfo	file:
 __str__	libgsync/drive/__init__.py	/^    def __str__(self):$/;"	m	class:EFileNotFound	file:
 __str__	libgsync/sync/file/__init__.py	/^    def __str__(self): return self.__d.strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")$/;"	m	class:SyncFileInfoDatetime	file:
@@ -88,6 +97,7 @@ __sub__	libgsync/sync/file/__init__.py	/^    def __sub__(self, d): return self._
 __updateDir	libgsync/sync/file/__init__.py	/^    def __updateDir(self, path, src):$/;"	m	class:SyncFile	file:
 __updateFile	libgsync/sync/file/__init__.py	/^    def __updateFile(self, path, src):$/;"	m	class:SyncFile	file:
 __updateStats	libgsync/sync/file/__init__.py	/^    def __updateStats(self, path, src):$/;"	m	class:SyncFile	file:
+_callback	libgsync/sync/file/remote/__init__.py	/^        def _callback(status):$/;"	f	function:SyncFileRemote._updateFile
 _clearCache	libgsync/drive/__init__.py	/^    def _clearCache(self, path):$/;"	m	class:_Drive
 _createDir	libgsync/sync/file/__init__.py	/^    def _createDir(self, path, src = None):$/;"	m	class:SyncFile
 _createDir	libgsync/sync/file/local/__init__.py	/^    def _createDir(self, path, src = None):$/;"	m	class:SyncFileLocal
@@ -96,16 +106,19 @@ _createFile	libgsync/sync/file/__init__.py	/^    def _createFile(self, path, src
 _createFile	libgsync/sync/file/local/__init__.py	/^    def _createFile(self, path, src):$/;"	m	class:SyncFileLocal
 _createFile	libgsync/sync/file/remote/__init__.py	/^    def _createFile(self, path, src):$/;"	m	class:SyncFileRemote
 _devCheck	libgsync/crawler.py	/^    def _devCheck(self, dev, path):$/;"	m	class:Crawler
-_dict	libgsync/drive/file.py	/^    _dict = None$/;"	v	class:DriveFile
 _dict	libgsync/sync/file/__init__.py	/^    _dict = None$/;"	v	class:SyncFileInfo
 _findEntity	libgsync/drive/__init__.py	/^    def _findEntity(self, name, ents):$/;"	m	class:_Drive
 _getConfigDir	libgsync/drive/__init__.py	/^    def _getConfigDir(self, subdir = None):$/;"	m	class:_Drive
 _getConfigFile	libgsync/drive/__init__.py	/^    def _getConfigFile(self, name):$/;"	m	class:_Drive
 _getCredentialStorage	libgsync/drive/__init__.py	/^    def _getCredentialStorage(self):$/;"	m	class:_Drive
+_getProperties	libgsync/drive/__init__.py	/^    def _getProperties(self, ent):$/;"	m	class:_Drive
+_initialised	libgsync/options/__init__.py	/^    _initialised = False$/;"	v	class:_GsyncListOptions
+_md5Checksum	libgsync/sync/file/local/__init__.py	/^    def _md5Checksum(self, path):$/;"	m	class:SyncFileLocal
 _normaliseSource	libgsync/sync/file/__init__.py	/^    def _normaliseSource(self, src):$/;"	m	class:SyncFile
 _obtainCredentials	libgsync/drive/__init__.py	/^    def _obtainCredentials(self):$/;"	m	class:_Drive
-_print	libgsync/output.py	/^    def _print(self, msg):$/;"	m	class:Channel
-_print	libgsync/output.py	/^    def _print(self, msg):$/;"	m	class:Debug
+_print	libgsync/output.py	/^    def _print(self):$/;"	m	class:Progress
+_print	libgsync/output.py	/^    def _print(self, msg, priority = 1):$/;"	m	class:Channel
+_print	libgsync/output.py	/^    def _print(self, msg, priority = 1):$/;"	m	class:Debug
 _printFrame	libgsync/output.py	/^    def _printFrame(self, frame, msg = None, indent = ""):$/;"	m	class:Debug
 _priority	libgsync/output.py	/^    _priority = -1 $/;"	v	class:Channel
 _query	libgsync/drive/__init__.py	/^    def _query(self, **kwargs):$/;"	m	class:_Drive
@@ -117,14 +130,16 @@ _updateDir	libgsync/sync/file/__init__.py	/^    def _updateDir(self, path, src):
 _updateFile	libgsync/sync/file/__init__.py	/^    def _updateFile(self, path, src):$/;"	m	class:SyncFile
 _updateFile	libgsync/sync/file/local/__init__.py	/^    def _updateFile(self, path, src):$/;"	m	class:SyncFileLocal
 _updateFile	libgsync/sync/file/remote/__init__.py	/^    def _updateFile(self, path, src):$/;"	m	class:SyncFileRemote
-_updateStats	libgsync/sync/file/__init__.py	/^    def _updateStats(self, path, src, mode, uid, gid, atime, mtime):$/;"	m	class:SyncFile
+_updateStats	libgsync/sync/file/__init__.py	/^    def _updateStats(self, path, src, mode, uid, gid, mtime, atime):$/;"	m	class:SyncFile
 _updateStats	libgsync/sync/file/local/__init__.py	/^    def _updateStats(self, path, src, mode, uid, gid, mtime, atime):$/;"	m	class:SyncFileLocal
 _updateStats	libgsync/sync/file/remote/__init__.py	/^    def _updateStats(self, path, src, mode, uid, gid, mtime, atime):$/;"	m	class:SyncFileRemote
 _walk	libgsync/crawler.py	/^    def _walk(self, path, generator, dev):$/;"	m	class:Crawler
 bind	libgsync/bind.py	/^class bind(object):$/;"	c
 bytesRead	libgsync/sync/file/__init__.py	/^    bytesRead = 0$/;"	v	class:SyncFile
 bytesWritten	libgsync/sync/file/__init__.py	/^    bytesWritten = 0$/;"	v	class:SyncFile
+client_obj	libgsync/drive/client_json.py	/^client_obj = {$/;"	v
 close	libgsync/drive/__init__.py	/^    def close(self):$/;"	m	class:DriveFileObject
+complete	libgsync/output.py	/^    def complete(self, bytesWritten):$/;"	m	class:Progress
 create	libgsync/drive/__init__.py	/^    def create(self, path, properties):$/;"	m	class:_Drive
 create	libgsync/sync/file/__init__.py	/^    def create(self, path, src = None):$/;"	m	class:SyncFile
 create	libgsync/sync/file/factory.py	/^    def create(path):$/;"	m	class:SyncFileFactory
@@ -143,16 +158,18 @@ getInfo	libgsync/sync/file/local/__init__.py	/^    def getInfo(self, path = None
 getInfo	libgsync/sync/file/remote/__init__.py	/^    def getInfo(self, path = None):$/;"	m	class:SyncFileRemote
 getPath	libgsync/sync/file/__init__.py	/^    def getPath(self, path = None):$/;"	m	class:SyncFile
 getPath	libgsync/sync/file/remote/__init__.py	/^    def getPath(self, path = None):$/;"	m	class:SyncFileRemote
+getProperties	libgsync/drive/file.py	/^    def getProperties(self):$/;"	m	class:DriveFile
 getUploader	libgsync/sync/file/__init__.py	/^    def getUploader(self, path = None):$/;"	m	class:SyncFile
 getUploader	libgsync/sync/file/local/__init__.py	/^    def getUploader(self, path = None):$/;"	m	class:SyncFileLocal
 getUploader	libgsync/sync/file/remote/__init__.py	/^    def getUploader(self, path = None):$/;"	m	class:SyncFileRemote
 get_version	libgsync/__init__.py	/^def get_version():$/;"	f
 get_version	libgsync/version.py	/^def get_version(): return VERSION$/;"	f
 ignoretz	libgsync/sync/file/__init__.py	/^        ignoretz=True$/;"	v	class:SyncFileInfoDatetime
-initialise	libgsync/options.py	/^def initialise(options):$/;"	f
 is_drivepath	libgsync/drive/__init__.py	/^    def is_drivepath(self, path):$/;"	m	class:_Drive
 is_rootpath	libgsync/drive/__init__.py	/^    def is_rootpath(self, path):$/;"	m	class:_Drive
 isdir	libgsync/drive/__init__.py	/^    def isdir(self, path):$/;"	m	class:_Drive
+islocal	libgsync/sync/file/__init__.py	/^    def islocal(self):$/;"	m	class:SyncFile
+isremote	libgsync/sync/file/__init__.py	/^    def isremote(self):$/;"	m	class:SyncFile
 itemize	libgsync/output.py	/^itemize = Itemize()$/;"	v
 items	libgsync/drive/file.py	/^    def items(self): return self._dict.items()$/;"	m	class:DriveFile
 items	libgsync/sync/file/__init__.py	/^    def items(self): return self._dict.items()$/;"	m	class:SyncFileInfo
@@ -160,6 +177,7 @@ iteritems	libgsync/drive/file.py	/^    def iteritems(self): return self._dict.it
 iteritems	libgsync/sync/file/__init__.py	/^    def iteritems(self): return self._dict.iteritems()$/;"	m	class:SyncFileInfo
 keys	libgsync/drive/file.py	/^    def keys(self): return self._dict.keys()$/;"	m	class:DriveFile
 keys	libgsync/sync/file/__init__.py	/^    def keys(self): return self._dict.keys()$/;"	m	class:SyncFileInfo
+list	libgsync/options/__init__.py	/^    def list(self):$/;"	m	class:_GsyncOptions
 listdir	libgsync/drive/__init__.py	/^    def listdir(self, path):$/;"	m	class:_Drive
 logger	libgsync/drive/__init__.py	/^    logger = logging.getLogger()$/;"	v
 mimetype	libgsync/drive/__init__.py	/^    def mimetype(self, mimeType = None):$/;"	m	class:DriveFileObject
@@ -168,8 +186,11 @@ normpath	libgsync/drive/__init__.py	/^    def normpath(self, path):$/;"	m	class:
 normpath	libgsync/sync/file/__init__.py	/^    def normpath(self, path):$/;"	m	class:SyncFile
 normpath	libgsync/sync/file/remote/__init__.py	/^    def normpath(self, path):$/;"	m	class:SyncFileRemote
 open	libgsync/drive/__init__.py	/^    def open(self, path, mode = "r"):$/;"	m	class:_Drive
+os_walk_wrapper	libgsync/crawler.py	/^def os_walk_wrapper(path):$/;"	f
 path	libgsync/sync/file/__init__.py	/^    path = None$/;"	v	class:SyncFile
 pathlist	libgsync/drive/__init__.py	/^    def pathlist(self, path):$/;"	m	class:_Drive
+prop	libgsync/drive/file.py	/^    def prop(self, key, default = None):$/;"	m	class:DriveFile
+rate	libgsync/output.py	/^    def rate(self):$/;"	m	class:Progress
 rate	libgsync/sync/__init__.py	/^    def rate(self):$/;"	m	class:Sync
 read	libgsync/drive/__init__.py	/^    def read(self, length = None):$/;"	m	class:DriveFileObject
 relativeTo	libgsync/sync/file/__init__.py	/^    def relativeTo(self, relpath):$/;"	m	class:SyncFile
@@ -177,6 +198,7 @@ rm	libgsync/drive/__init__.py	/^    def rm(self, path, recursive=False):$/;"	m	c
 run	libgsync/crawler.py	/^    def run(self):$/;"	m	class:Crawler
 seek	libgsync/drive/__init__.py	/^    def seek(self, offset, whence = 0):$/;"	m	class:DriveFileObject
 service	libgsync/drive/__init__.py	/^    def service(self):$/;"	m	class:_Drive
+setProperties	libgsync/drive/file.py	/^    def setProperties(self, props):$/;"	m	class:DriveFile
 src	libgsync/sync/__init__.py	/^    src = None$/;"	v	class:Sync
 stack	libgsync/output.py	/^    def stack(self):$/;"	m	class:Debug
 started	libgsync/sync/__init__.py	/^    started = None$/;"	v	class:Sync
@@ -187,8 +209,10 @@ tell	libgsync/drive/__init__.py	/^    def tell(self):$/;"	m	class:DriveFileObjec
 totalBytesReceived	libgsync/sync/__init__.py	/^    totalBytesReceived = 0L$/;"	v	class:Sync
 totalBytesSent	libgsync/sync/__init__.py	/^    totalBytesSent = 0L$/;"	v	class:Sync
 truncate	libgsync/drive/__init__.py	/^    def truncate(self, size = None):$/;"	m	class:DriveFileObject
-update	libgsync/drive/__init__.py	/^    def update(self, path, properties, media_body = None):$/;"	m	class:_Drive
+unicode	libgsync/drive/__init__.py	/^    def unicode(s):$/;"	m	class:_Drive
+update	libgsync/drive/__init__.py	/^    def update(self,$/;"	m	class:_Drive
 update	libgsync/sync/file/__init__.py	/^    def update(self, path, src):$/;"	m	class:SyncFile
+utf8	libgsync/drive/__init__.py	/^    def utf8(s):$/;"	m	class:_Drive
 validatepath	libgsync/drive/__init__.py	/^    def validatepath(self, path):$/;"	m	class:_Drive
 values	libgsync/drive/file.py	/^    def values(self): return self._dict.values()$/;"	m	class:DriveFile
 values	libgsync/sync/file/__init__.py	/^    def values(self): return self._dict.values()$/;"	m	class:SyncFileInfo

@@ -101,11 +101,14 @@ class SyncFileRemote(SyncFile):
             bytesWritten = info.fileSize
             progress(MediaUploadProgress(bytesWritten, bytesWritten))
         else:
+            progress.bytesTotal = info.fileSize
+
             drive = Drive()
             info = drive.update(path, info, src.getUploader(), progress)
 
             if info is not None:
                 bytesWritten = long(info.get('fileSize', '0'))
+                debug("Final file size: %d" % bytesWritten)
             else:
                 debug("Update failed")
 
@@ -133,7 +136,6 @@ class SyncFileRemote(SyncFile):
         
         info._setStatInfo(st_info)
 
-        debug("mtime = %s" % repr(mtime))
         mtime_utc = datetime.datetime.utcfromtimestamp(mtime).isoformat()
             
         Drive().update(path, properties = {

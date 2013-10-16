@@ -28,12 +28,8 @@ class Sync(object):
         self.dst = SyncFileFactory.create(dst)
 
     def __call__(self, path):
-        changes = self._sync(path)
+        self._sync(path)
 
-        if changes is not None:
-            if not GsyncOptions.itemize_changes:
-                verbose(changes[1])
-                
     def _sync(self, path):
         debug("Synchronising: %s" % repr(path))
 
@@ -181,6 +177,8 @@ class Sync(object):
 
         if GsyncOptions.itemize_changes:
             itemize(changes, relPath)
+        else:
+            verbose(relPath)
 
         try:
             if create:
@@ -201,5 +199,3 @@ class Sync(object):
         finally:
             self.totalBytesSent += self.dst.bytesWritten
             self.totalBytesReceived += self.dst.bytesRead
-
-        return (changes, relPath)
