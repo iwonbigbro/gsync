@@ -1,6 +1,10 @@
-gsync 0.1.7:
+gsync 0.1.8:
 
  * FIXED BUG #26: Error: TypeError('a float is required',)
+
+ * FIXED BUG #25: Transfer Stats
+
+gsync 0.1.7:
 
  * FIXED BUG #29: OSError('No such file or directory: h')
 
