@@ -1,0 +1,2 @@
+include README.rst CHANGELIST.rst LICENSE
+recursive-include bin libgsync *.py
