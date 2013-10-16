@@ -150,7 +150,7 @@ class Sync(object):
                     if GsyncOptions.group and dstSt.st_gid != srcSt.st_gid:
                         changes[7] = 'g'
 
-                if srcFile.modifiedTime != dstFile.modifiedTime:
+                if srcFile.modifiedDate != dstFile.modifiedDate:
                     if GsyncOptions.times:
                         changes[4] = 't'
                     else:
