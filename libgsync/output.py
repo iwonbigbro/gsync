@@ -59,7 +59,7 @@ class Debug(Channel):
         import traceback
         super(Debug, self)._print("DEBUG: %s: %s" % (
             repr(e), "".join(traceback.format_tb(sys.exc_info()[2]))
-        ))
+        ), -1)
 
 
 class Verbose(Channel):
