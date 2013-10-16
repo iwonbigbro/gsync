@@ -1,3 +1,9 @@
+gsync 0.1.7:
+
+ * FIXED BUG #26: Error: TypeError('a float is required',)
+
+ * FIXED BUG #29: OSError('No such file or directory: h')
+
 gsync 0.1.6:
 
  * FIXED BUG #27: Error: TypeError('a float is required',)
