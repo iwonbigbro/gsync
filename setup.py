@@ -30,12 +30,12 @@ setup(
         'setuptools',
     ],
     install_requires = [
-        'google-api-python-client',
+        'google-api-python-client >= 1.2',
         'docopt >= 0.6.0',
-        'httplib2',
-        'oauth2client',
-        'python-dateutil',
-        'urllib3',
+        'httplib2 >= 0.8',
+        'oauth2client >= 1.1',
+        'python-dateutil >= 1.5',
+        'urllib3 >= 1.5',
     ],
     packages = [
         'libgsync',
