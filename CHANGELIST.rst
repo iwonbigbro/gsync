@@ -19,7 +19,7 @@
     - FEATURE #12: Implement --checksum option.
 
     - FIXED BUG #22: Modification time is not being set to match the source
-                     file modification time when used with --times 
+      file modification time when used with --times 
 
     New in version 0.1.4:
 
@@ -36,13 +36,13 @@
     New in version 0.1.2:
 
     - FIXED BUG #15: Specifying source and/or destination files results in
-                     creation of directories where there should be files, on
-                     the client or server.
+      creation of directories where there should be files, on
+      the client or server.
 
     New in version 0.1.1:
 
     - FIXED BUG #13: Specifying a file to copy instead of a directory does
-                     nothing.
+      nothing.
 
     - FIXED BUG #14: Attempted install on a 'Python Fresh' machine
 
@@ -65,6 +65,6 @@
     - FIXED BUG: Syncs one file and crashes with division by zero error.
 
     - FIXED BUG: Always: Error: String or Integer object expected for key,
-                 unicode found.
+      unicode found.
      
     - FIXED BUG: Files get updated that are in Trash and do not get restored.
