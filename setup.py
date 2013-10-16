@@ -28,6 +28,7 @@ setup(
     packages = [
         'libgsync',
         'libgsync.drive',
+        'libgsync.options',
         'libgsync.sync',
         'libgsync.sync.file',
         'libgsync.sync.file.local',

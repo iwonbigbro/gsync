@@ -1,3 +1,9 @@
+gsync 0.1.6:
+
+ * FIXED BUG #27: Error: TypeError('a float is required',)
+
+ * FIXED BUG #28: Command line arguments are not repeatable: e.g. --filter
+
 gsync 0.1.5:
 
  * FEATURE #12: Implement --checksum option.

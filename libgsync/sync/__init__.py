@@ -17,9 +17,10 @@ class Sync(object):
     started = None
 
     def rate(self):
-        delta = float(time.time() - self.started)
-        totalBytes = float(self.totalBytesSent + self.totalBytesReceived)
-        return float(totalBytes / delta)
+        delta = float(time.time()) - float(self.started)
+        totalBytes = float(self.totalBytesSent) + \
+            float(self.totalBytesReceived)
+        return float(totalBytes) / float(delta)
 
     def __init__(self, src, dst):
         self.started = time.time()
