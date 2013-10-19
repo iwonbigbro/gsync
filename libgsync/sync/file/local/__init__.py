@@ -91,6 +91,9 @@ class SyncFileLocal(SyncFile):
             os.utime(path, (atime, mtime))
 
     def _md5Checksum(self, path):
+        if os.path.isdir(path):
+            return None
+
         try:
             import hashlib
             m = hashlib.md5()
@@ -100,9 +103,9 @@ class SyncFileLocal(SyncFile):
                 return m.hexdigest()
 
         except Exception, e:
-            debug.exception()
-            debug("Exception: %s" % repr(e))
-            return None
+            debug.exception(e)
+
+        return None
 
     def _createDir(self, path, src = None):
         debug("Creating local directory: %s" % repr(path))
