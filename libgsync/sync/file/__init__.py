@@ -56,6 +56,14 @@ class SyncFileInfoDatetime(object):
     def __int__(self): return int(self.__secs())
     def __long__(self): return long(self.__secs())
     def __float__(self): return float(self.__secs())
+    def __sub__(self, d): return self.__d - self.__(d)
+    def __cmp__(self, d): return int(self.__d) - self.__(d)
+    def __lt__(self, d): return (self.__d < self.__(d))
+    def __le__(self, d): return (self.__d <= self.__(d))
+    def __eq__(self, d): return (self.__d == self.__(d))
+    def __ne__(self, d): return (self.__d != self.__(d))
+    def __gt__(self, d): return (self.__d > self.__(d))
+    def __ge__(self, d): return (self.__d >= self.__(d))
 
 
 class SyncFileInfo(object):
@@ -227,24 +235,27 @@ class SyncFile(object):
         if src is None: return
 
         srcInfo = src.getInfo()
-        debug("srcInfo = %s" % repr(srcInfo))
         srcStatInfo = srcInfo.statInfo
 
         mode, uid, gid, atime, mtime = None, None, None, None, None
 
+        debug("Updating: %s" % repr(path))
+
         if srcStatInfo is not None:
             if GsyncOptions.perms:
                 mode = srcStatInfo.st_mode
+                if mode is not None:
+                    debug(" * Updating with mode: %d" % mode)
 
             if GsyncOptions.owner:
                 uid = srcStatInfo.st_uid
                 if uid is not None:
-                    debug("Updating with uid: %d" % uid)
+                    debug(" * Updating with uid: %d" % uid)
 
             if GsyncOptions.group:
                 gid = srcStatInfo.st_gid
                 if gid is not None:
-                    debug("Updating with gid: %d" % gid)
+                    debug(" * Updating with gid: %d" % gid)
 
         if GsyncOptions.times:
             mtime = float(srcInfo.modifiedDate)
@@ -256,8 +267,8 @@ class SyncFile(object):
         else:
             atime = mtime
 
-        debug("Updating with mtime: %0.2f" % mtime)
-        debug("Updating with atime: %0.2f" % atime)
+        debug(" * Updating with mtime: %0.2f" % mtime)
+        debug(" * Updating with atime: %0.2f" % atime)
 
         self._updateStats(path, src, mode, uid, gid, mtime, atime)
 
@@ -265,7 +276,7 @@ class SyncFile(object):
     def _normaliseSource(self, src):
         srcPath, srcObj, srcInfo = None, None, None
 
-        debug("src = %s" % repr(src))
+        debug("src = %s" % repr(src), 3)
         debug("type(src) = %s" % type(src))
 
         if src is not None:
@@ -291,7 +302,7 @@ class SyncFile(object):
                     repr(src), type(src))
                 )
 
-        debug("srcInfo = %s" % repr(srcInfo))
+        debug("srcInfo = %s" % repr(srcInfo), 3)
 
         return (srcPath, srcInfo, srcObj)
 

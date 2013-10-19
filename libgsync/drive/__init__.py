@@ -449,11 +449,6 @@ class _Drive():
 
         return None
 
-    # TODO: Implement function for obtaining and caching properties.
-    def _getProperties(self, ent):
-        debug("Fetching file properties: %s" % repr(ent))
-        return None
-
     def stat(self, path):
         self.validatepath(path)
         path = self.normpath(path)
@@ -515,23 +510,16 @@ class _Drive():
             if ent is None:
                 return None
 
-            # Obtain file properties.
-            props = self._getProperties(ent)
-
             # Update path cache.
             if self._pcache.get(search) is None:
-                debug("Updating path cache: %s" % repr(search))
+                debug("Updating path cache: %s" % repr(search), 3)
                 self._pcache[search] = ent
 
             if search == path:
                 debug("Found %s" % repr(search))
-                debug(" * ent: %s" % repr(ent))
                 df = DriveFile(path = _Drive.unicode(path), **ent)
 
-                if props is not None:
-                    df.setProperties(props)
-
-                debug(" * returning %s" % repr(df))
+                debug(" * returning %s" % repr(df), 3)
                 return df
 
         # Finally, couldn't find anything, raise an error?
@@ -685,7 +673,7 @@ class _Drive():
             debug("No such file: %s" % repr(path))
             return None
 
-        debug("Updating: %s" % repr(info))
+        debug("Updating: %s" % repr(path))
 
         # Merge properties
         for k, v in properties.iteritems():

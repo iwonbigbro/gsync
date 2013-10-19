@@ -27,14 +27,16 @@ class Channel(object):
 
 class Debug(Channel):
     def _print(self, msg, priority = 1):
-        stack = inspect.stack()
-        indent = "".join([ " " for i in range(len(stack) - 2) ])
+        if self._priority >= priority:
+            stack = inspect.stack()
+            indent = "".join([ " " for i in range(len(stack) - 2) ])
 
-        self._printFrame(stack[2], msg, indent)
+            self._printFrame(stack[2], msg, indent)
 
     def _printFrame(self, frame, msg = None, indent = ""):
         (fr, f, l, fn, c, i) = frame
-        f = re.sub(r'^.*dist-packages/', "", f)
+        f = re.sub(r'^.*libgsync/', "", f)
+        f = re.sub(r'/__init__.py', "/", f)
         if msg is not None:
             super(Debug, self)._print(
                 "DEBUG: %s%s:%d:%s(): %s" % (indent, f, l, fn, msg)

@@ -6,6 +6,7 @@ import sys, os, logging, re
 from libgsync.options import GsyncOptions
 from libgsync.output import verbose, debug
 from libgsync.crawler import Crawler
+from libgsync.filter import Filter
 
 if GsyncOptions.verbose:
     verbose.enable()
@@ -22,6 +23,21 @@ paths = GsyncOptions.list().source_paths
 dest = GsyncOptions.destination_path
 
 debug(GsyncOptions.options)
+
+if GsyncOptions.filter is not None:
+    Filter.addRules(GsyncOptions.list().filter)
+
+if GsyncOptions.include_from is not None:
+    Filter.loadRules(GsyncOptions.list().include_from, "+")
+
+if GsyncOptions.include is not None:
+    Filter.addRules(GsyncOptions.list().include, "+")
+
+if GsyncOptions.exclude_from is not None:
+    Filter.loadRules(GsyncOptions.list().exclude_from, "-")
+
+if GsyncOptions.exclude is not None:
+    Filter.addRules(GsyncOptions.list().exclude, "-")
 
 # If there are multiple source paths, the destination is always a
 # directory if a name is supplied.  Otherwise, the destination is

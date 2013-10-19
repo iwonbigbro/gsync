@@ -42,8 +42,6 @@ class Sync(object):
             debug("File not found: %s" % repr(path))
             return None
 
-        debug("srcFile = %s" % repr(srcFile))
-
         folder = bool(srcFile.mimeType == MimeTypes.FOLDER)
         dstPath = None
         dstFile = None
@@ -65,6 +63,9 @@ class Sync(object):
             dstPath = self.dst + relPath
             dstFile = self.dst.getInfo(relPath)
             debug("Defaulting destination directory: %s" % repr(dstPath))
+
+        debug("srcFile = %s" % repr(srcFile), 3)
+        debug("dstFile = %s" % repr(dstFile), 3)
 
         if dstFile is None:
             debug("File not found: %s" % repr(dstPath))
@@ -117,11 +118,13 @@ class Sync(object):
 
                 if srcFile.modifiedDate > dstFile.modifiedDate:
                     debug("File timestamp mismatch: %s" % repr(path))
-                    debug("    source mtime:      %d" %
+                    debug(" * source mtime:      %d" %
                         int(srcFile.modifiedDate))
-                    debug("    destination mtime: %d" %
+                    debug(" * destination mtime: %d" %
                         int(dstFile.modifiedDate))
-                
+                    debug(" * delta:             %s" %
+                        repr(srcFile.modifiedDate - dstFile.modifiedDate))
+
                     if GsyncOptions.times:
                         changes[4] = 't'
                     else:

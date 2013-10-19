@@ -12,6 +12,9 @@ class SyncFileRemote(SyncFile):
         super(SyncFileRemote, self).__init__(path)
         self._path = self.normpath(path)
 
+    def __repr__(self):
+        return "SyncFileRemote(%s)" % repr(self._path)
+
     def normpath(self, path):
         return Drive().normpath(path)
 
@@ -60,9 +63,9 @@ class SyncFileRemote(SyncFile):
             debug("File not found: %s" % repr(path))
             return None
 
-        debug("Remote file metadata = %s" % repr(info))
         info = SyncFileInfo(**info)
-        debug("Remote mtime: %s" % info.modifiedDate)
+        debug("Remote file = %s" % repr(info), 3)
+        debug("Remote mtime: %s" % repr(info.modifiedDate))
 
         return info
 

@@ -55,6 +55,8 @@ class SyncFileLocal(SyncFile):
                 md5Checksum = md5Checksum,
                 path=path
             )
+            debug("Local file = %s" % repr(info), 3)
+            debug("Local mtime: %s" % repr(info.modifiedDate))
         except OSError, e:
             debug("File not found: %s" % repr(path))
             return None
