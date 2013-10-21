@@ -1,3 +1,7 @@
+    New in version 0.1.13:
+
+    - FIXED BUG #32: MemoryError() with the checksum option with large files
+
     New in version 0.1.10:
 
     - FIXED BUG #31: Files being reported out of date when they are not.
