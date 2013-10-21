@@ -99,7 +99,12 @@ class SyncFileLocal(SyncFile):
             m = hashlib.md5()
 
             with open(path, "r") as f:
-                m.update(f.read())
+                # Read the file in 1K chunks to avoid memory consumption
+                while True:
+                    chunk = f.read(1024)
+                    if not chunk: break
+                    m.update(chunk)
+
                 return m.hexdigest()
 
         except Exception, e:
