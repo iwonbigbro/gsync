@@ -121,4 +121,15 @@ Options:
  -h, --help                  show this help
 
 See https://github.com/iwonbigbro/gsync for updates, bug reports and answers
+
+Environment variables:
+
+   The configuration directory defaults to $HOME/.gsync.  This path can be
+   overridden by specifying the environment variable GSYNC_CONFIG_DIR.  Any
+   configuration files will be loaded from this directory.
+
+   Individual configuration files can also be overridden by substituting any
+   non-alphanumeric character in the filename with an underscore and adding
+   the GSYNC_ prefix.  For example, to override the client.json configuration
+   file, specify an environment variable named GSYNC_CLIENT_JSON.
 """
