@@ -24,44 +24,63 @@ dest = GsyncOptions.destination_path
 
 debug(GsyncOptions.options)
 
-if GsyncOptions.filter is not None:
-    Filter.addRules(GsyncOptions.list().filter)
-
-if GsyncOptions.include_from is not None:
-    Filter.loadRules(GsyncOptions.list().include_from, "+")
-
-if GsyncOptions.include is not None:
-    Filter.addRules(GsyncOptions.list().include, "+")
-
-if GsyncOptions.exclude_from is not None:
-    Filter.loadRules(GsyncOptions.list().exclude_from, "-")
-
-if GsyncOptions.exclude is not None:
-    Filter.addRules(GsyncOptions.list().exclude, "-")
-
-# If there are multiple source paths, the destination is always a
-# directory if a name is supplied.  Otherwise, the destination is
-# a directory if the source is also a directory, or it is a file if
-# the destination does not exist or is already an existing file.
-if len(paths) > 1:
-    debug("Multiple source files, destination cannot be a file")
-    GsyncOptions.force_dest_file = False
-else:
-    GsyncOptions.force_dest_file = None
-
 try:
+    if GsyncOptions.filter is not None:
+        Filter.addRules(GsyncOptions.list().filter)
+
+    if GsyncOptions.include_from is not None:
+        Filter.loadRules(GsyncOptions.list().include_from, "+")
+
+    if GsyncOptions.include is not None:
+        Filter.addRules(GsyncOptions.list().include, "+")
+
+    if GsyncOptions.exclude_from is not None:
+        Filter.loadRules(GsyncOptions.list().exclude_from, "-")
+
+    if GsyncOptions.exclude is not None:
+        Filter.addRules(GsyncOptions.list().exclude, "-")
+
+    # If there are multiple source paths, the destination is always a
+    # directory if a name is supplied.  Otherwise, the destination is
+    # a directory if the source is also a directory, or it is a file if
+    # the destination does not exist or is already an existing file.
+    if len(paths) > 1:
+        debug("Multiple source files, destination cannot be a file")
+        GsyncOptions.force_dest_file = False
+    else:
+        GsyncOptions.force_dest_file = None
+
     for p in paths:
         debug("Creating crawler for: %s" % repr(p))
         crawler = Crawler(p, dest)
         crawler.run()
 
-except KeyboardInterrupt, e:
-    sys.exit(1)
-
-except Exception, e:
+except BaseException, e:
     debug.exception(e)
-    sys.stderr.write("Error: %s\n" % str(e))
-    sys.exit(255)
+    sys.stderr.write("gsync: %s\n" % str(e))
+
+    from libgsync import __version__
+    import traceback
+
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    tb = traceback.extract_tb(exc_traceback)
+    source_file = "unknown"
+    lineno = 0
+
+    for i in xrange(len(tb) - 1, -1, -1):
+        if re.match(r'^.*/libgsync/.*$', tb[i][0]) is not None:
+            source_file = os.path.basename(tb[i][0])
+            if source_file == "__init__.py":
+                source_file = os.path.basename(
+                    os.path.dirname(tb[i][0])
+                )
+            lineno = tb[i][1]
+            break
+
+    sys.stderr.write("gsync error: %s at %s(%d) [client=%s]\n" % (
+        e.__class__.__name__, source_file, lineno, __version__
+    ))
+    sys.exit(1)
 
 debug("Crawlers finished, exiting")
 

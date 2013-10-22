@@ -1,6 +1,7 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
 import re
+from libgsync.output import debug
 
 RULEMOD_PAIRS = [
     ("exclude", "-"),
@@ -13,11 +14,11 @@ RULEMOD_PAIRS = [
     ("merge", "."),
 ]
 RULES = "(%s)" % "|".join([ r for r, m in RULEMOD_PAIRS ])
-MODIFIERS = "(%s)" % "|".join([ m for r, m in RULEMOD_PAIRS ])
-EXPR_RULE_MOD_PATTERN = "\s*(%s),\s*(%s)\s*(\S+)" % (RULES, MODIFIERS)
-EXPR_RULE_PATTERN = "\s*(%s)\s*(\S+)" % (RULES)
-EXPR_MOD_PATTERN = "\s*,?\s*(%s)\s*(\S+)" % (MODIFIERS)
-EXPR = r"^(?:%s|%s|%s)$" % (
+MODIFIERS = "([%s])" % "".join([ m for r, m in RULEMOD_PAIRS ])
+EXPR_RULE_MOD_PATTERN = "\s*%s,\s*%s\s*(\S+)" % (RULES, MODIFIERS)
+EXPR_RULE_PATTERN = "\s*%s\s*(\S+)" % (RULES)
+EXPR_MOD_PATTERN = "\s*,?\s*%s\s*(\S+)" % (MODIFIERS)
+EXPR_LIST = (
     EXPR_RULE_MOD_PATTERN,
     EXPR_MOD_PATTERN,
     EXPR_RULE_PATTERN,
@@ -26,6 +27,9 @@ EXPR = r"^(?:%s|%s|%s)$" % (
 def glob(pattern, path):
     # TODO:
     return False
+
+class FilterException(Exception):
+    pass
 
 class FilterObject(object):
     def __init__(self):
@@ -54,15 +58,23 @@ class FilterObject(object):
             self.addRule(modifier + " " + rule)
 
     def addRule(self, rule_string):
-        rule, mod, pattern = None, None, None
-        match = re.match(EXPR, rule_string)
+        match, rule, mod, pattern = None, None, None, None
+
+        for expr in EXPR_LIST:
+            match = re.match(expr, rule_string)
+            if match is not None:
+                break
 
         if match is None:
             return
 
-        if len(match.groups()) > 2:
+        ngroups = len(match.groups())
+        debug("%s matched %d groups" % (repr(rule_string), ngroups))
+        debug(" * [%s]" % ",".join([ x if x else "" for x in match.groups() ]))
+
+        if ngroups == 3:
             rule, mod, pattern = match.groups()
-        elif len(match.groups()) > 1:
+        elif ngroups == 2:
             mod, pattern = match.groups()
             mod = mod[0].upper()
 
@@ -71,8 +83,7 @@ class FilterObject(object):
             elif mod == "D": mod = ":"
             elif mod == "M": mod = "."
         else:
-            # Invalid rule.
-            return
+            raise FilterException("Invalid rule: %s" % rule_string)
 
         if mod == ":":
             self.dir_merge = pattern
