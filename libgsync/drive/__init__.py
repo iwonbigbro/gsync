@@ -278,8 +278,10 @@ class _Drive():
         debug("My pid = %d" % os.getpid())
 
     def _getConfigDir(self, subdir = None):
-        homedir = os.getenv('HOME', '~')
-        configdir = os.path.join(homedir, '.gsync')
+        configdir = os.getenv('GSYNC_CONFIG_DIR',
+            os.path.join(os.getenv('HOME', '~'), '.gsync')
+        )
+        debug("Config dir = %s" % configdir)
 
         if not os.path.exists(configdir):
             os.mkdir(configdir, 0700)
@@ -293,7 +295,10 @@ class _Drive():
         return configdir
 
     def _getConfigFile(self, name):
-        return os.path.join(self._getConfigDir(), name)
+        envname = re.sub(r'[^0-9A-Z]', '_', 'GSYNC_%s' % name.upper())
+        val = os.getenv(envname, os.path.join(self._getConfigDir(), name))
+        debug("Environment: %s=%s" % (envname, val))
+        return val
 
     def _getCredentialStorage(self):
         storage = self._credentialStorage
