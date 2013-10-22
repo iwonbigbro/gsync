@@ -1,3 +1,8 @@
+    New in version 0.1.14:
+
+    - FEATURE #33: Option to change the default dir config files 
+      (.gsync and client.json).
+
     New in version 0.1.13:
 
     - FIXED BUG #32: MemoryError() with the checksum option with large files
