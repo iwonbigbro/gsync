@@ -50,6 +50,17 @@ To upgrade gsync, you can run pip with the --upgrade option:
 
 That's it.  GSync will be installed along with any required packages.
 
+Authentication:
+===============================================================================
+
+Authentication occurs just once, the first time a connection is established with your drive. To establish a connection, just specify a drive source or destination file like:
+
+    $ gsync drive://somepath/in/your/drive ~/some/local/path
+
+It will provide a URL for which you can obtain a GUID from Google that you paste into the command line prompt. Once authenticated, it caches the GUID in your ~/.gsync directory. To force authentication, just remove this directory.
+
+See: https://developers.google.com/accounts/docs/OAuth2
+
 RSync options implemented so far:
 ===============================================================================
 
