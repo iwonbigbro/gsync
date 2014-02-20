@@ -41,7 +41,9 @@ only checks for dependencies but doesn't actually install them.  On Debian I
 installed using the following steps:
 
     $ sudo apt-get install python-setuptools
+    
     $ sudo easy_install pip
+    
     $ sudo pip install gsync
 
 To upgrade gsync, you can run pip with the --upgrade option:
