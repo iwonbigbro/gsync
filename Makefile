@@ -60,5 +60,5 @@ install: /usr/local/bin/gsync
 	@find /usr/local/lib/python2.7/dist-packages/ ! -perm -o=r -exec chmod o+r {} \;
 
 runtests:
-	./unittests.py
-	./regression.py
+	./tests/unittests.py
+	./tests/regression.py
