@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Copyright (C) 2014 Craig Phillips.  All rights reserved.
+
 import unittest, os
 from libgsync.output import debug
 from libgsync.drive import Drive, DriveFile
