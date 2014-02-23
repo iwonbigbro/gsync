@@ -1,0 +1,9 @@
+# Copyright (C) 2014 Craig Phillips.  All rights reserved.
+
+gsync.egg-info/
+build/
+dist/
+
+ctags
+
+MANIFEST

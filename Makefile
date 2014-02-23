@@ -6,11 +6,15 @@ all:
 	@echo "Run make with the following targets:"
 	@echo "    install        Install the GSync application in this system"
 	@echo "    uninstall      Remove the GSync application from this system"
+	@echo "    runtests       Run Gsync unit and regression tests"
+	@echo "    ctags          Generate ctags file"
 
 reverse = $(if $(1),$(call reverse,\
 	$(wordlist 2,$(words $(1)),$(1)))) $(firstword $(1)\
 )
 reverse = $(shell printf "%s\n" $(strip $1) | tac)
+
+SRC_FILES:= $(shell find bin/ libgsync/ -type f)
 
 MANIFEST:= $(if $(wildcard MANIFEST),$(shell cat MANIFEST),)
 RM_MANIFEST:= $(addprefix uninstall_,\
@@ -41,10 +45,19 @@ $(RM_MANIFEST): uninstall_% : %
 uninstall: $(RM_MANIFEST)
 	@echo "Uninstall complete"
 
-install: setup.py
+ctags: $(SRC_FILES)
+	@rm -f $@
+	@ctags -R -f $@ bin/ libgsync/
+
+install: /usr/local/bin/gsync
+
+/usr/local/bin/gsync: setup.py $(SRC_FILES)
 	@[ $(shell id -u) -eq 0 ] || { \
 		echo >&2 "Error: You must be root" ; \
 		exit 1 ; \
 	}
-	./setup.py install --record MANIFEST
-	find /usr/local/lib/python2.7/dist-packages/ ! -perm -o=r -exec chmod o+r {} \;
+	@./setup.py install --record MANIFEST
+	@find /usr/local/lib/python2.7/dist-packages/ ! -perm -o=r -exec chmod o+r {} \;
+
+runtests:
+	@echo Not yet implemented.
