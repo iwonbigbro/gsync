@@ -1,4 +1,4 @@
-Copyright (C) 2013 Craig Phillips.  All rights reserved.
+Copyright (C) 2013-2014 Craig Phillips.  All rights reserved.
 
 Google currently don't produce a Linux variant of their client for Google-Drive.
 This is my implementation of a multiplatform, command line tool that for the
