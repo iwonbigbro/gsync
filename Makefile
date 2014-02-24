@@ -62,8 +62,17 @@ bdist build: setup.py $(SRC_FILES)
 	@sudo ./setup.py install --record MANIFEST
 	@sudo find /usr/local/lib/python2.7/dist-packages/ ! -perm -o=r -exec chmod o+r {} \;
 
+PY_COVERAGE:=$(if $(COVERAGE),$(shell which coverage),)
+
 run_unittests:
+ifneq (,$(PY_COVERAGE))
+	@rm -rf htmlcov/
+	@$(PY_COVERAGE) erase
+	@$(PY_COVERAGE) run ./setup.py test
+	@$(PY_COVERAGE) html --include="libgsync/*"
+else
 	@./setup.py test
+endif
 
 run_regression:
 	@./tests/regression.py
