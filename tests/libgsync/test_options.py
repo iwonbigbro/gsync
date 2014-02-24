@@ -42,3 +42,11 @@ class TestGsyncOptions(unittest.TestCase):
         self.assertNotEqual(GsyncOptions.debug, None)
         self.assertNotEqual(GsyncOptions.debug, None)
         self.assertEqual(1, myInitClass.call_count)
+
+    def test_02_GsyncOptions_list_options(self):
+        import libgsync.options
+        GsyncOptions = libgsync.options.GsyncOptions
+
+        self.assertFalse(isinstance(GsyncOptions.debug, list))
+        self.assertTrue(isinstance(GsyncOptions.list().debug, list))
+        self.assertEqual(GsyncOptions.debug, GsyncOptions.list().debug[-1])
