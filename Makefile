@@ -43,7 +43,7 @@ $(RM_MANIFEST): uninstall_% : %
 	fi
 
 clean:
-	@rm -rf build/ dist/ gsync.egg-info/
+	@rm -rf build/ dist/ gsync.egg-info/ htmlcov/
 	@find . -name \*.pyc -delete
 
 uninstall: $(RM_MANIFEST)
