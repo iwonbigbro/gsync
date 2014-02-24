@@ -1,27 +1,11 @@
 #!/usr/bin/env python
 
 # Copyright (C) 2014 Craig Phillips.  All rights reserved.
-
 import unittest, os
 from libgsync.output import debug
 from libgsync.drive import Drive, DriveFile
 from libgsync.drive.mimetypes import MimeTypes
-from libgsync.sync.file import SyncFile
 from apiclient.http import MediaFileUpload
-
-if os.environ.get('DEBUG') == '1':
-    debug.enable()
-
-
-class TestSyncFile(unittest.TestCase):
-    def test_SyncFile_relativeTo(self):
-        f = SyncFile("/gsync_unittest")
-
-        self.assertEqual(
-            f.relativeTo("/gsync_unittest/open_for_read.txt"),
-            "open_for_read.txt"
-        )
-
 
 class TestDrive(unittest.TestCase):
     @classmethod
@@ -177,8 +161,6 @@ class TestDrive(unittest.TestCase):
         self.assertEqual(info.title, "gsync_unittest")
 
     def test_mkdir(self):
-        self.skipTest("slow")
-
         drive = Drive()
         info = drive.mkdir("drive://gsync_unittest/test_mkdir/a/b/c/d/e/f/g")
         self.assertIsNotNone(info)
@@ -208,6 +190,3 @@ class TestDrive(unittest.TestCase):
 
         self.assertIsNotNone(contents)
         self.assertNotEqual(contents, "")
-
-
-unittest.main()

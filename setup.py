@@ -26,6 +26,7 @@ setup(
         "Change history",
         open("CHANGELIST.rst").read()
     ]),
+    test_suite = "tests",
     setup_requires = [
         'setuptools',
     ],

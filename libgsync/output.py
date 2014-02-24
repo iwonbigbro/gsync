@@ -142,3 +142,6 @@ class Progress(object):
 verbose = Verbose()
 debug = Debug()
 itemize = Itemize()
+
+if os.environ.get('GSYNC_DEBUG', '0') == '1':
+    debug.enable()

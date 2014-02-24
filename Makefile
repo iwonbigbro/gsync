@@ -42,6 +42,10 @@ $(RM_MANIFEST): uninstall_% : %
 		rm -vf $< ; \
 	fi
 
+clean:
+	@rm -rf build/ dist/ gsync.egg-info/
+	@find . -name \*.pyc -delete
+
 uninstall: $(RM_MANIFEST)
 	@echo "Uninstall complete"
 
@@ -51,14 +55,15 @@ ctags: $(SRC_FILES)
 
 install: /usr/local/bin/gsync
 
-/usr/local/bin/gsync: setup.py $(SRC_FILES)
-	@[ $(shell id -u) -eq 0 ] || { \
-		echo >&2 "Error: You must be root" ; \
-		exit 1 ; \
-	}
-	@./setup.py install --record MANIFEST
-	@find /usr/local/lib/python2.7/dist-packages/ ! -perm -o=r -exec chmod o+r {} \;
+bdist build: setup.py $(SRC_FILES)
+	@./setup.py $@
 
-runtests:
-	./tests/unittests.py
-	./tests/regression.py
+/usr/local/bin/gsync: build bdist
+	@sudo ./setup.py install --record MANIFEST
+	@sudo find /usr/local/lib/python2.7/dist-packages/ ! -perm -o=r -exec chmod o+r {} \;
+
+run_unittests:
+	@./setup.py test
+
+run_regression:
+	@./tests/regression.py
