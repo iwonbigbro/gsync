@@ -1,15 +1,40 @@
 #!/usr/bin/env python
 
 # Copyright (C) 2014 Craig Phillips.  All rights reserved.
-import unittest, os
+import unittest, os, inspect
 from libgsync.output import debug
 from libgsync.drive import Drive, DriveFile
 from libgsync.drive.mimetypes import MimeTypes
 from apiclient.http import MediaFileUpload
 
+# This decorator is used to skip tests that require authentication and a
+# connection to a user's drive account.  Rather than fail setup or tests,
+# we simply skip them and flag them as such.
+def requires_auth(func):
+    def __requires_auth(testcase, *args, **kwargs):
+        auth = os.path.join(
+            os.environ.get("HOME", "~"), ".gsync", "credentials"
+        )
+        if os.path.exists(auth):
+            return func(testcase, *args, **kwargs)
+
+        if inspect.isclass(testcase):
+            return None
+
+        testcase.skipTest("Authentication not established")
+        return None
+
+    return __requires_auth
+
+
 class TestDrive(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.setUpDriveData()
+
+    @classmethod
+    @requires_auth
+    def setUpDriveData(cls):
         # Ironic, using Gsync to setup the tests, but if it fails the tests
         # will fail anyway, so we will be okay.
         assert os.path.exists("tests/data")
@@ -137,7 +162,9 @@ class TestDrive(unittest.TestCase):
 
         ff = DriveFile(**f)
         self.assertIsNotNone(ff)
+        self.assertEqual(f.id, ff.id)
 
+    @requires_auth
     def test_isdir(self):
         drive = Drive()
 
@@ -148,6 +175,7 @@ class TestDrive(unittest.TestCase):
         drive.create("drive://gsync_unittest/not_a_dir", {})
         self.assertFalse(drive.isdir("drive://gsync_unittest/not_a_dir"))
 
+    @requires_auth
     def test_stat(self):
         drive = Drive()
 
@@ -160,6 +188,7 @@ class TestDrive(unittest.TestCase):
         self.assertIsNotNone(info.id)
         self.assertEqual(info.title, "gsync_unittest")
 
+    @requires_auth
     def test_mkdir(self):
         drive = Drive()
         info = drive.mkdir("drive://gsync_unittest/test_mkdir/a/b/c/d/e/f/g")
@@ -168,11 +197,13 @@ class TestDrive(unittest.TestCase):
 
         drive.delete("drive://gsync_unittest/test_mkdir", skipTrash=True)
 
+    @requires_auth
     def test_open_for_read(self):
         drive = Drive()
         f = drive.open("drive://gsync_unittest/open_for_read.txt", "r")
         self.assertIsNotNone(f)
 
+    @requires_auth
     def test_open_for_read_and_seek(self):
         drive = Drive()
         f = drive.open("drive://gsync_unittest/open_for_read.txt", "r")
@@ -183,6 +214,7 @@ class TestDrive(unittest.TestCase):
 
         self.assertNotEqual(f.tell(), 0)
 
+    @requires_auth
     def test_open_for_read_and_read_data(self):
         drive = Drive()
         f = drive.open("drive://gsync_unittest/open_for_read.txt", "r")
