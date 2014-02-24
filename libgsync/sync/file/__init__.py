@@ -1,7 +1,11 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
-import os, datetime, time, posix, dateutil.parser, re
+import os, datetime, time, dateutil.parser, re
 from dateutil.tz import tzutc
+
+# Provide support for Windows environments.
+try: import posix as os_platform
+except Exception: import nt as os_platform
 
 from zlib import compress, decompress
 from base64 import b64encode, b64decode
@@ -124,14 +128,14 @@ class SyncFileInfo(object):
             value = (0,0,0,0,0,0,0,0,0,0)
 
         if isinstance(value, tuple) or isinstance(value, list):
-            value = posix.stat_result(tuple(value))
+            value = os_platform.stat_result(tuple(value))
             self._dict['statInfo'] = value
             self._dict['description'] = \
                 b64encode(compress(pickle.dumps(value))) 
 
             return
             
-        if isinstance(value, posix.stat_result):
+        if isinstance(value, os_platform.stat_result):
             try:
                 self._dict['description'] = \
                     b64encode(compress(pickle.dumps(value))) 
