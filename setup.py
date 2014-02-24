@@ -36,6 +36,7 @@ setup(
         'httplib2 >= 0.8',
         'oauth2client >= 1.1',
         'python-dateutil >= 1.5',
+        'python-magic >= 0.4.6',
         'urllib3 >= 1.5',
     ],
     packages = [

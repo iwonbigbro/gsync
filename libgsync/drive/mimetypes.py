@@ -1,6 +1,7 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
 from __future__ import absolute_import
+import sys
 
 class MimeTypes(object):
     NONE = "none/unknown-mimetype"
@@ -12,8 +13,7 @@ class MimeTypes(object):
         mimeType = None
         try:
             import magic
-            if callable(magic.from_file):
-                mimeType = magic.from_file(path, mime = True)
+            mimeType = magic.from_file(path, mime=True)
         except Exception, e:
             import mimetypes
             mimeType = mimetypes.guess_type(path)[0]
