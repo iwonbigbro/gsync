@@ -56,7 +56,12 @@ class Debug(Channel):
         super(Debug, self)._print("DEBUG: END STACK TRACE")
 
     def exception(self, e = None):
-        if e is None: e = "Exception"
+        if e is None:
+            e = "Exception"
+        else:
+            super(Debug, self)._print("DEBUG: %s: %s" % (
+                repr(e), str(e)
+            ), -1)
 
         import traceback
         super(Debug, self)._print("DEBUG: %s: %s" % (

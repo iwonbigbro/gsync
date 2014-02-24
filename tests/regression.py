@@ -8,13 +8,15 @@
 
 import unittest, os
 
-#debug.enable()
+if os.environ.get('DEBUG') == '1':
+    debug.enable()
+
 
 class TestRegression(unittest.TestCase):
     def setUp(self):
         pass
 
-    def test_local_file_transfer():
+    def test_local_file_transfer(self):
         pass
 
 unittest.main()

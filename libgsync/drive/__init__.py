@@ -81,6 +81,11 @@ class DriveFileObject(object):
         self._filename = filename
         self._parentInfo = self._drive.stat(dirname)
 
+    def __repr__(self):
+        return "%s(%s, %s)" % (
+            self.__class__.__name__, repr(self._path), repr(self._mode)
+        )
+
     def _requiredOpen(self):
         if self.closed:
             raise ValueError("File is closed: %s" % self._path)
@@ -88,6 +93,17 @@ class DriveFileObject(object):
     def _requireModes(self, modes):
         if self._mode in modes:
             raise ValueError("Operation not permitted: %s()" % name)
+
+    def revisions(self):
+        try:
+            revisions = self._drive.service().revisions().list(
+                fileId=self._info.id
+            ).execute()
+            return revisions.get('items', [])
+
+        except Exception, e:
+            debug.exception(e)
+            return None
 
     def mimetype(self, mimeType = None):
         if mimetype is not None:
@@ -169,7 +185,28 @@ class DriveFileObject(object):
         raise Exception("Not currently supported by Google Drive API v2")
 
 
-class _Drive():
+class DrivePathCache(object):
+    def __init__(self, data={}):
+        self.__data = data
+
+    def put(self, path, data):
+        path = Drive().normpath(path)
+        self.__data[path] = data
+
+    def get(self, path):
+        path = Drive().normpath(path)
+        return self.__data.get(path)
+
+    def clear(self, path):
+        path = Drive().normpath(path)
+        if self.__data.has_key(path):
+            del self.__data[path]
+
+    def __repr__(self):
+        return "DrivePathCache(%s)" % repr(self.__data)
+        
+
+class _Drive(object):
     def __init__(self):
         debug("Initialising drive")
 
@@ -178,17 +215,19 @@ class _Drive():
         self._credentials = None
         self._service = None
         self._credentialStorage = None
-        
+        self.reinit()
+
+        debug("Initialisation complete")
+
+    def reinit(self):
         # Load Google Drive local cache
         self._gcache = {}
 
         # Load parent folder cache
-        self._pcache = {}
+        self._pcache = DrivePathCache()
 
         # Load file properties cache
         self._icache = {}
-
-        debug("Initialisation complete")
      
     @staticmethod
     def unicode(s):
@@ -518,7 +557,7 @@ class _Drive():
             # Update path cache.
             if self._pcache.get(search) is None:
                 debug("Updating path cache: %s" % repr(search), 3)
-                self._pcache[search] = ent
+                self._pcache.put(search, ent)
 
             if search == path:
                 debug("Found %s" % repr(search))
@@ -530,9 +569,6 @@ class _Drive():
         # Finally, couldn't find anything, raise an error?
         return None
 
-    def rm(self, path, recursive=False):
-        pass
-    
     def mkdir(self, path):
         debug("path = %s" % repr(path))
 
@@ -578,7 +614,7 @@ class _Drive():
 
             if info:
                 self._clearCache(path)
-                self._pcache[path] = info
+                self._pcache.put(path, info)
                 ent = DriveFile(path = _Drive.unicode(normpath), **info)
                 return ent
         except Exception, e:
@@ -658,7 +694,7 @@ class _Drive():
 
             # Clear the cache and update the path cache
             self._clearCache(path)
-            self._pcache[path] = ent
+            self._pcache.put(path, ent)
 
             return ent
         except Exception, e:
@@ -700,7 +736,7 @@ class _Drive():
             )
 
             if progress_callback is None:
-                return req.execute()
+                res = req.execute()
 
             else:
                 status, res = None, None
@@ -717,7 +753,11 @@ class _Drive():
                     if status:
                         progress_callback(status)
 
-                return res
+            # Refresh the cache with the latest revision
+            self._clearCache(path)
+            self._pcache.put(path, res)
+
+            return res
 
         except Exception, e:
             debug("Update failed: %s" % repr(e))
@@ -727,8 +767,8 @@ class _Drive():
     def _clearCache(self, path):
         debug("Clearing path cache entries for '%s'..." % repr(path))
         if self._pcache.get(path):
-            debug("    * delting: %s" % repr(path))
-            del self._pcache[path]
+            debug("    * deleting: %s" % repr(path))
+            self._pcache.clear(path)
 
         info = self.stat(path)
         if info is None: return
@@ -737,14 +777,14 @@ class _Drive():
 
         debug("Clearing Google cache entries...")
         if self._gcache.get(strInfoId):
-            debug("    * delting: %s" % strInfoId)
+            debug("    * deleting: %s" % strInfoId)
             del self._gcache[strInfoId]
 
         # Parent cache must also be cleared
         for p in info.parents:
             pid = str(p['id'])
             if self._gcache.get(pid):
-                debug("    * delting: %s" % pid)
+                debug("    * deleting: %s" % pid)
                 del self._gcache[pid]
 
     def _query(self, **kwargs):
