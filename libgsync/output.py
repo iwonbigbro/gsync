@@ -14,6 +14,9 @@ class Channel(object):
             self._priority = 0
         self._priority += 1
 
+    def disable(self):
+        self._priority = -1
+
     def enabled(self):
         return self._priority > 0
 

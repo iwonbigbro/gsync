@@ -220,14 +220,8 @@ class _Drive(object):
         debug("Initialisation complete")
 
     def reinit(self):
-        # Load Google Drive local cache
-        self._gcache = {}
-
         # Load parent folder cache
         self._pcache = DrivePathCache()
-
-        # Load file properties cache
-        self._icache = {}
      
     @staticmethod
     def unicode(s):
@@ -613,7 +607,6 @@ class _Drive(object):
             ).execute()
 
             if info:
-                self._clearCache(path)
                 self._pcache.put(path, info)
                 ent = DriveFile(path = _Drive.unicode(normpath), **info)
                 return ent
@@ -661,9 +654,9 @@ class _Drive(object):
         except Exception, e:
             debug("Deltion failed: %s" % repr(e))
 
-        self._clearCache(path)
-
     def create(self, path, properties):
+        debug("Create file %s" % repr(path))
+
         # Get the parent directory.
         dirname, basename = os.path.split(path)
         info = self.stat(dirname)
@@ -671,31 +664,36 @@ class _Drive(object):
 
         parentId = info.id
 
-        # Get the file info and delete existing file.
-        info = self.stat(path)
-        if info is not None:
-            self.delete(path)
-
-        body = {}
-        for k, v in properties.iteritems():
-            body[k] = _Drive.utf8(v)
-
-        # Retain the title from the path being created.
-        body['title'] = _Drive.utf8(os.path.basename(path))
-
-        if parentId:
-            body['parents'] = [{'id': parentId}]
+        debug(" * parentId = %s" % repr(parentId))
 
         try:
+            # Get the file info and delete existing file.
+            info = self.stat(path)
+            if info is not None:
+                debug(" * deleting existing...")
+                self.delete(path)
+
+            debug(" * merging properties...")
+            body = {}
+            for k, v in properties.iteritems():
+                body[k] = _Drive.utf8(v)
+
+            # Retain the title from the path being created.
+            body['title'] = _Drive.utf8(os.path.basename(path))
+
+            if parentId:
+                body['parents'] = [{'id': parentId}]
+
+            debug(" * trying...")
             ent = self.service().files().insert(
                 body = body,
                 media_body = ""
             ).execute()
 
             # Clear the cache and update the path cache
-            self._clearCache(path)
             self._pcache.put(path, ent)
 
+            debug(" * file created")
             return ent
         except Exception, e:
             debug("Creation failed: %s" % repr(e))
@@ -754,7 +752,6 @@ class _Drive(object):
                         progress_callback(status)
 
             # Refresh the cache with the latest revision
-            self._clearCache(path)
             self._pcache.put(path, res)
 
             return res
@@ -764,43 +761,12 @@ class _Drive(object):
             debug.exception()
             raise
     
-    def _clearCache(self, path):
-        debug("Clearing path cache entries for '%s'..." % repr(path))
-        if self._pcache.get(path):
-            debug("    * deleting: %s" % repr(path))
-            self._pcache.clear(path)
-
-        info = self.stat(path)
-        if info is None: return
-
-        strInfoId = str(info.id)
-
-        debug("Clearing Google cache entries...")
-        if self._gcache.get(strInfoId):
-            debug("    * deleting: %s" % strInfoId)
-            del self._gcache[strInfoId]
-
-        # Parent cache must also be cleared
-        for p in info.parents:
-            pid = str(p['id'])
-            if self._gcache.get(pid):
-                debug("    * deleting: %s" % pid)
-                del self._gcache[pid]
-
     def _query(self, **kwargs):
         parentId = kwargs.get("parentId")
         mimeType = kwargs.get("mimeType")
         fileId = kwargs.get("id")
         includeTrash = kwargs.get("includeTrash", False)
         result = []
-
-        if parentId is not None:
-            debug("Checking gcache for parentId: %s" % parentId)
-            cached = self._gcache.get(parentId, None)
-
-            if cached is not None:
-                result.extend(cached)
-                return result
 
         page_token = None
         service = self.service()
@@ -835,9 +801,6 @@ class _Drive(object):
             page_token = files.get('nextPageToken')
 
             if not page_token: break
-
-        debug("Updating google cache: %s (%d items)" % (parentId, len(ents)))
-        self._gcache[parentId] = ents
 
         return ents
 

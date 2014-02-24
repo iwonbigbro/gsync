@@ -26,33 +26,32 @@ def requires_auth(func):
 
     return __requires_auth
 
+@requires_auth
+def setup_drive_data(testcase):
+    # Ironic, using Gsync to setup the tests, but if it fails the tests
+    # will fail anyway, so we will be okay.
+    assert os.path.exists("tests/data")
+
+    drive = Drive()
+    drive.delete("drive://gsync_unittest/", skipTrash=True)
+    drive.mkdir("drive://gsync_unittest/")
+    drive.create("drive://gsync_unittest/open_for_read.txt", {})
+    drive.update("drive://gsync_unittest/open_for_read.txt", {},
+        MediaFileUpload("tests/data/open_for_read.txt",
+            mimetype=MimeTypes.BINARY_FILE, resumable=True
+        )
+    )
+
 
 class TestDrive(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.setUpDriveData()
-
-    @classmethod
-    @requires_auth
-    def setUpDriveData(cls):
-        # Ironic, using Gsync to setup the tests, but if it fails the tests
-        # will fail anyway, so we will be okay.
-        assert os.path.exists("tests/data")
-
-        drive = Drive()
-        drive.delete("drive://gsync_unittest/", skipTrash=True)
-        drive.mkdir("drive://gsync_unittest/")
-        drive.create("drive://gsync_unittest/open_for_read.txt", {})
-        drive.update("drive://gsync_unittest/open_for_read.txt", {},
-            MediaFileUpload("tests/data/open_for_read.txt",
-                mimetype=MimeTypes.BINARY_FILE, resumable=True
-            )
-        )
+        setup_drive_data(cls)
 
     def setUp(self):
         pass
 
-    def test_Drive_normpath(self):
+    def test_normpath(self):
         drive = Drive()
 
         paths = [
@@ -86,7 +85,7 @@ class TestDrive(unittest.TestCase):
                 )
             )
 
-    def test_Drive_strippath(self):
+    def test_strippath(self):
         drive = Drive()
 
         paths = [
@@ -120,7 +119,7 @@ class TestDrive(unittest.TestCase):
                 )
             )
 
-    def test_Drive_pathlist(self):
+    def test_pathlist(self):
         drive = Drive()
         paths = [
             "drive://",
@@ -149,21 +148,6 @@ class TestDrive(unittest.TestCase):
                 )
             )
 
-    def test_DriveFile(self):
-        data = {
-            'id': 'fhebfhbf',
-            'title': 'Test file',
-            'mimeType': 'application/dummy'
-        }
-
-        f = DriveFile(**data)
-        self.assertIsNotNone(f)
-        self.assertEqual(f.id, data['id'])
-
-        ff = DriveFile(**f)
-        self.assertIsNotNone(ff)
-        self.assertEqual(f.id, ff.id)
-
     @requires_auth
     def test_isdir(self):
         drive = Drive()
@@ -191,11 +175,47 @@ class TestDrive(unittest.TestCase):
     @requires_auth
     def test_mkdir(self):
         drive = Drive()
+
         info = drive.mkdir("drive://gsync_unittest/test_mkdir/a/b/c/d/e/f/g")
         self.assertIsNotNone(info)
         self.assertEqual(info.title, "g")
 
         drive.delete("drive://gsync_unittest/test_mkdir", skipTrash=True)
+
+    @requires_auth
+    def test_listdir(self):
+        drive = Drive()
+
+        info = drive.create("drive://gsync_unittest/a_file_to_list", {})
+        self.assertIsNotNone(info)
+
+        items = drive.listdir("drive://gsync_unittest/")
+        self.assertTrue(isinstance(items, list))
+        self.assertTrue("a_file_to_list" in items)
+
+
+class TestDriveFile(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        setup_drive_data(cls)
+
+    def setUp(self):
+        pass
+
+    def test_constructor(self):
+        data = {
+            'id': 'fhebfhbf',
+            'title': 'Test file',
+            'mimeType': 'application/dummy'
+        }
+
+        f = DriveFile(**data)
+        self.assertIsNotNone(f)
+        self.assertEqual(f.id, data['id'])
+
+        ff = DriveFile(**f)
+        self.assertIsNotNone(ff)
+        self.assertEqual(f.id, ff.id)
 
     @requires_auth
     def test_open_for_read(self):
@@ -207,8 +227,7 @@ class TestDrive(unittest.TestCase):
     def test_open_for_read_and_seek(self):
         drive = Drive()
         f = drive.open("drive://gsync_unittest/open_for_read.txt", "r")
-        debug("f.revisions() = %s" % repr(f.revisions()))
-        debug("f._info = %s" % repr(f._info))
+
         self.assertNotEqual(int(f._info.fileSize), 0)
         f.seek(0, os.SEEK_END)
 
@@ -222,3 +241,7 @@ class TestDrive(unittest.TestCase):
 
         self.assertIsNotNone(contents)
         self.assertNotEqual(contents, "")
+
+
+if __name__ == "__main__":
+    unittest.main()
