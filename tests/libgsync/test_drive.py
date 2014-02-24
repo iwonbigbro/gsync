@@ -12,10 +12,10 @@ from apiclient.http import MediaFileUpload
 # we simply skip them and flag them as such.
 def requires_auth(func):
     def __requires_auth(testcase, *args, **kwargs):
-        auth = os.path.join(
-            os.environ.get("HOME", "~"), ".gsync", "credentials"
-        )
-        if os.path.exists(auth):
+        config_dir = Drive()._getConfigDir()
+        credentials = os.path.join(config_dir, "credentials")
+
+        if os.path.exists(credentials):
             return func(testcase, *args, **kwargs)
 
         if inspect.isclass(testcase):
