@@ -24,6 +24,20 @@ dest = GsyncOptions.destination_path
 
 debug(GsyncOptions.options)
 
+if GsyncOptions.authenticate:
+    import libgsync.drive
+    try:
+        service = libgsync.drive.Drive().service()
+        if service is not None:
+            sys.stdout.write("Authenticated\n")
+            sys.exit(0)
+
+    except Exception, e:
+        debug.exception(e)
+
+    sys.stderr.write("Error: Failed to authenticate\n")
+    sys.exit(1)
+
 try:
     if GsyncOptions.filter is not None:
         Filter.addRules(GsyncOptions.list().filter)

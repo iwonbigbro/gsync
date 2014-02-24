@@ -16,7 +16,7 @@ The only functional difference is that gsync is intended to be used for
 synchronising between a source directory and remote Google Drive directory.
 
 Usage:
- gsync [options]... <path> <path>...
+ gsync ( --authenticate [--debug] | [options]... <path> <path>... )
 
 Arguments:
  <path>                      path to a local file, directory, remote file or 
@@ -33,6 +33,7 @@ Arguments:
                              directory.
 
 Options:
+     --authenticate          setup authentication with your Google Drive
  -v, --verbose               enable verbose output
      --debug                 enable debug output
  -q, --quiet                 suppress non-error messages

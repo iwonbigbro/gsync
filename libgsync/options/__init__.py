@@ -18,7 +18,7 @@ class _GsyncOptions(type):
         )
 
         paths = options.pop('<path>', None)
-        setattr(self, "destination_path", paths.pop())
+        setattr(self, "destination_path", paths.pop() if paths else None)
         setattr(self, "source_paths", paths)
         setattr(self, "options", options)
 
