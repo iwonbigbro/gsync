@@ -15,24 +15,24 @@ from libgsync.output import verbose, debug
 from libgsync.drive.mimetypes import MimeTypes
 from libgsync.drive.file import DriveFile
 
-if debug.enabled():
+if debug.enabled(): # pragma: no cover
     import logging
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
 
-class ENoTTY(Exception):
+class ENoTTY(Exception): # pragma: no cover
     pass
 
-class EGetAuthURL(Exception):
+class EGetAuthURL(Exception): # pragma: no cover
     pass
 
-class EExchange(Exception):
+class EExchange(Exception): # pragma: no cover
     pass
 
-class EInvalidRequest(Exception):
+class EInvalidRequest(Exception): # pragma: no cover
     pass
 
-class EFileNotFound(Exception):
+class EFileNotFound(Exception): # pragma: no cover
     def __init__(self, filename):
         self.filename = filename
 
