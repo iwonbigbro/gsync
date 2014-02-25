@@ -365,6 +365,54 @@ class TestDriveFileObject(unittest.TestCase):
         self.assertEqual(int(revisions[0]['fileSize']), 0)
         self.assertNotEqual(int(revisions[-1]['fileSize']), 0)
 
+    @requires_auth
+    def test_mimetypes(self):
+        drive = Drive()
+
+        drive.mkdir("drive://gsync_unittest/mimetype_test_dir")
+
+        f = drive.open("drive://gsync_unittest/mimetype_test_dir", "r")
+        self.assertEqual(f.mimetype(), MimeTypes.FOLDER)
+
+        f.mimetype(MimeTypes.BINARY_FILE)
+        self.assertEqual(f.mimetype(), MimeTypes.BINARY_FILE)
+
+    @requires_auth
+    def test_close(self):
+        drive = Drive()
+
+        f = drive.open("drive://gsync_unittest/open_for_read.txt", "r")
+        contents = f.read()
+        self.assertNotEqual(contents, None)
+
+        f.close()
+        self.assertTrue(f.closed)
+
+        try:
+            f.seek(0)
+            self.assertEqual("Expected IOError for seek on closed file", None)
+        except IOError:
+            pass
+
+    @requires_auth
+    def test_write(self):
+        drive = Drive()
+
+        try:
+            drive.open("drive://gsync_unittest/open_for_read.txt", "w")
+            self.assertEqual("Expected IOError for unsupported mode", None)
+        except IOError:
+            pass
+            
+        f = drive.open("drive://gsync_unittest/open_for_read.txt", "r")
+        try:
+            f.write("Some data")
+            self.assertEqual(
+                "Expected IOError for writing to readable file", None
+            )
+        except IOError:
+            pass
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -69,6 +69,9 @@ class DriveFileObject(object):
             if self._info.fileSize is not None:
                 self._size = int(self._info.fileSize)
 
+            if self._info.mimeType is not None:
+                self._mimeType = self._info.mimeType
+
             self.description = self._info.description
 
         dirname, filename = os.path.split(path)
@@ -83,11 +86,11 @@ class DriveFileObject(object):
 
     def _requiredOpen(self):
         if self.closed:
-            raise ValueError("File is closed: %s" % self._path)
+            raise IOError("File is closed: %s" % self._path)
 
-    def _requireModes(self, modes):
+    def _requiredModes(self, modes):
         if self._mode in modes:
-            raise ValueError("Operation not permitted: %s()" % name)
+            raise IOError("Operation not permitted: %s()" % name)
 
     def revisions(self):
         try:
@@ -101,7 +104,7 @@ class DriveFileObject(object):
             return None
 
     def mimetype(self, mimeType = None):
-        if mimetype is not None:
+        if mimeType is not None:
             self._mimeType = mimeType
         return self._mimeType
 
@@ -176,6 +179,7 @@ class DriveFileObject(object):
 
     def write(self, data):
         self._requiredOpen()
+        self._requiredModes([ "w", "a" ])
 
         raise NotImplemented("Not currently supported by Google Drive API v2")
 
