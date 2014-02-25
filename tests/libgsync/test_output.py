@@ -198,6 +198,31 @@ class TestProgress(TestCaseStdStringIO):
 
             self.assertIsNotNone(pat.search(sys.stdout.getvalue()))
 
+    def test_rate_normalization(self):
+        channel = Progress()
+
+        self.assertNotEqual("", sys.stdout.getvalue())
+        self.assertEqual("", sys.stderr.getvalue())
+
+        fileSize = 1000000000
+
+        import re
+        pat = re.compile(
+            r'^\s+%d\s+%d%%\s+\d+\.\d{2}(?:KB|MB|GB|TB)/s\s+\d+:\d+:\d+$' % (fileSize, 100),
+            re.S | re.M
+        )
+
+        sys.stdout.truncate(0)
+        channel(ProgressStatus(fileSize, fileSize / 4))
+
+        self.assertIsNone(pat.search(sys.stdout.getvalue()))
+
+        sys.stdout.truncate(0)
+        channel.complete(fileSize)
+
+        self.assertIsNotNone(pat.search(sys.stdout.getvalue()))
+
+
     def test_complete(self):
         channel = Progress()
 
