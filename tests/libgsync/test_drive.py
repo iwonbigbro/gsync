@@ -3,7 +3,7 @@
 # Copyright (C) 2014 Craig Phillips.  All rights reserved.
 import unittest, os, inspect
 from libgsync.output import debug
-from libgsync.drive import Drive, DriveFile
+from libgsync.drive import Drive, DriveFile, DrivePathCache
 from libgsync.drive.mimetypes import MimeTypes
 from apiclient.http import MediaFileUpload
 
@@ -41,6 +41,65 @@ def setup_drive_data(testcase):
             mimetype=MimeTypes.BINARY_FILE, resumable=True
         )
     )
+
+
+class TestDrivePathCache(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def test_constructor(self):
+        dpc = DrivePathCache({
+            "junk": "junk",
+            "drive://gsync_unittest/a_valid_path": {}
+        })
+
+        self.assertEqual(dpc.get("junk"), None)
+        self.assertEqual(dpc.get("drive://gsync_unittest/a_valid_path"), {})
+
+    def test_put(self):
+        dpc = DrivePathCache()
+
+        self.assertEqual(dpc.get("drive://gsync_unittest"), None)
+        dpc.put("drive://gsync_unittest//////", {})
+        self.assertEqual(dpc.get("drive://gsync_unittest"), {})
+
+    def test_get(self):
+        dpc = DrivePathCache()
+
+        dpc.put("drive://gsync_unittest", {})
+        self.assertEqual(dpc.get("drive://gsync_unittest/123"), None)
+        self.assertEqual(dpc.get("drive://gsync_unittest//////"), {})
+        self.assertEqual(dpc.get("drive://gsync_unittest"), {})
+
+    def test_clear(self):
+        dpc = DrivePathCache()
+
+        dpc.put("drive://gsync_unittest/1", {})
+        dpc.put("drive://gsync_unittest/2", {})
+        dpc.put("drive://gsync_unittest/3", {})
+
+        self.assertEqual(dpc.get("drive://gsync_unittest/1"), {})
+        self.assertEqual(dpc.get("drive://gsync_unittest/2"), {})
+        self.assertEqual(dpc.get("drive://gsync_unittest/3"), {})
+
+        dpc.clear("drive://gsync_unittest/1")
+        self.assertEqual(dpc.get("drive://gsync_unittest/1"), None)
+        self.assertEqual(dpc.get("drive://gsync_unittest/2"), {})
+        self.assertEqual(dpc.get("drive://gsync_unittest/3"), {})
+
+        dpc.clear("drive://gsync_unittest/2")
+        self.assertEqual(dpc.get("drive://gsync_unittest/1"), None)
+        self.assertEqual(dpc.get("drive://gsync_unittest/2"), None)
+        self.assertEqual(dpc.get("drive://gsync_unittest/3"), {})
+
+        dpc.clear("drive://gsync_unittest/3")
+        self.assertEqual(dpc.get("drive://gsync_unittest/1"), None)
+        self.assertEqual(dpc.get("drive://gsync_unittest/2"), None)
+        self.assertEqual(dpc.get("drive://gsync_unittest/3"), None)
+
+    def test_repr(self):
+        dpc = DrivePathCache()
+        self.assertEqual(repr(dpc), "DrivePathCache({})")
 
 
 class TestDrive(unittest.TestCase):

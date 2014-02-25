@@ -187,7 +187,13 @@ class DriveFileObject(object):
 
 class DrivePathCache(object):
     def __init__(self, data={}):
-        self.__data = data
+        self.__data = {}
+        for k, v in data.iteritems():
+            path = Drive().normpath(k)
+            if path is None: continue
+            if not isinstance(v, dict): continue
+
+            self.__data[path] = v
 
     def put(self, path, data):
         path = Drive().normpath(path)
