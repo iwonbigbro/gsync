@@ -5,18 +5,15 @@ import os, sys, re, datetime, shelve, time
 try: import simplejson as json
 except ImportError: import json
 
+import oauth2client.util
+oauth2client.util.positional_parameters_enforcement = \
+    oauth2client.util.POSITIONAL_IGNORE
+
 from oauth2client.client import OAuth2Credentials
 from apiclient.http import MediaUploadProgress
 from libgsync.output import verbose, debug
 from libgsync.drive.mimetypes import MimeTypes
 from libgsync.drive.file import DriveFile
-
-try:
-    import gflags
-    #gflags['positional_parameters_enforcement'].value = 'EXCEPTION'
-    gflags['positional_parameters_enforcement'].value = 'IGNORE'
-except ImportError:
-    pass
 
 if debug.enabled():
     import logging
