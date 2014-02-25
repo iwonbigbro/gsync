@@ -11,14 +11,11 @@ from libgsync.output import verbose, debug
 from libgsync.drive.mimetypes import MimeTypes
 from libgsync.drive.file import DriveFile
 
-# Set to True for strict positional parameter exceptions in oauth2client
 try:
     import gflags
-    if False:
-        gflags.FLAGS['positional_parameters_enforcement'].value = 'EXCEPTION'
-    else:
-        gflags.FLAGS['positional_parameters_enforcement'].value = 'IGNORE'
-except Exception:
+    #gflags.FLAGS['positional_parameters_enforcement'].value = 'EXCEPTION'
+    gflags.FLAGS['positional_parameters_enforcement'].value = 'IGNORE'
+except ImportError:
     pass
 
 if debug.enabled():
@@ -183,7 +180,7 @@ class DriveFileObject(object):
     def write(self, data):
         self._requiredOpen()
 
-        raise Exception("Not currently supported by Google Drive API v2")
+        raise NotImplemented("Not currently supported by Google Drive API v2")
 
 
 class DrivePathCache(object):
