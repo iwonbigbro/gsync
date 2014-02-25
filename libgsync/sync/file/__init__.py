@@ -20,9 +20,6 @@ from libgsync.options import GsyncOptions
 class EUnknownSourceType(Exception): # pragma: no cover
     pass
 
-class ESyncFileAbstractMethod(Exception): # pragma: no cover
-    pass
-
 class EInvalidStatInfoType(Exception): # pragma: no cover
     def __init__(self, stype):
         self.statInfoType = stype
@@ -197,26 +194,26 @@ class SyncFile(object):
         debug("Joining: %s with %s" % (repr(self._path), repr(path)))
         return os.path.join(self._path, path)
 
-    def getUploader(self, path = None):
-        raise ESyncFileAbstractMethod
+    def getUploader(self, path = None): # pragma: no cover
+        raise NotImplementedError
 
-    def getInfo(self, path = None):
-        raise ESyncFileAbstractMethod
+    def getInfo(self, path = None): # pragma: no cover
+        raise NotImplementedError
 
-    def _createDir(self, path, src = None):
-        raise ESyncFileAbstractMethod
+    def _createDir(self, path, src = None): # pragma: no cover
+        raise NotImplementedError
 
-    def _updateDir(self, path, src):
-        raise ESyncFileAbstractMethod
+    def _updateDir(self, path, src): # pragma: no cover
+        raise NotImplementedError
 
-    def _createFile(self, path, src):
-        raise ESyncFileAbstractMethod
+    def _createFile(self, path, src): # pragma: no cover
+        raise NotImplementedError
 
-    def _updateFile(self, path, src):
-        raise ESyncFileAbstractMethod
+    def _updateFile(self, path, src): # pragma: no cover
+        raise NotImplementedError
 
-    def _updateStats(self, path, src, mode, uid, gid, mtime, atime):
-        raise ESyncFileAbstractMethod
+    def _updateStats(self, path, src, mode, uid, gid, mtime, atime): # pragma: no cover
+        raise NotImplementedError
 
     def __createFile(self, path, src = None):
         self._createFile(path, src)
