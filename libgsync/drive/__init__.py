@@ -90,6 +90,10 @@ class DriveFileObject(object):
 
     def _requiredModes(self, modes):
         if self._mode not in modes:
+            import inspect
+            curframe = inspect.currentframe()
+            calframe = inspect.getouterframes(curframe, 2)
+            name = calframe[1][3]
             raise IOError("Operation not permitted: %s()" % name)
 
     def revisions(self):
