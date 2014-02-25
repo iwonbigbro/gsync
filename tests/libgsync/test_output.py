@@ -222,6 +222,23 @@ class TestProgress(TestCaseStdStringIO):
 
         self.assertIsNotNone(pat.search(sys.stdout.getvalue()))
 
+    def test_zero_byte_file(self):
+        channel = Progress()
+
+        self.assertNotEqual("", sys.stdout.getvalue())
+        self.assertEqual("", sys.stderr.getvalue())
+
+        import re
+        pat = re.compile(
+            r'^\s+%d\s+%d%%\s+\d+\.\d{2}(?:B|KB|MB|GB|TB)/s\s+\d+:\d+:\d+$' % (0, 100),
+            re.S | re.M
+        )
+
+        sys.stdout.truncate(0)
+        channel.complete(0)
+
+        self.assertIsNotNone(pat.search(sys.stdout.getvalue()))
+
 
     def test_complete(self):
         channel = Progress()
