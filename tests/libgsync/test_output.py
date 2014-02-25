@@ -179,8 +179,13 @@ class TestProgress(TestCaseStdStringIO):
         self.assertNotEqual("", sys.stdout.getvalue())
         self.assertEqual("", sys.stderr.getvalue())
 
-    def test_status_messages(self):
-        channel = Progress()
+    def test_status_messages_with_callback(self):
+        def callback(status):
+            callback.called = True
+
+        callback.called = False
+
+        channel = Progress(callback=callback)
 
         self.assertNotEqual("", sys.stdout.getvalue())
         self.assertEqual("", sys.stderr.getvalue())
