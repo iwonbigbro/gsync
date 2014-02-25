@@ -3,7 +3,7 @@
 # Copyright (C) 2014 Craig Phillips.  All rights reserved.
 
 import unittest, StringIO, sys
-from libgsync.output import Channel, Debug
+from libgsync.output import Channel, Debug, Itemize, Progress
 
 class TestCaseStdStringIO(unittest.TestCase):
     def setUp(self):
@@ -131,6 +131,23 @@ class TestDebug(TestCaseStdStringIO):
             channel.exception()
 
         self.assertIsNotNone(pat.search(sys.stdout.getvalue()))
+        self.assertEqual("", sys.stderr.getvalue())
+
+
+class TestItemize(TestCaseStdStringIO):
+    def test_callable(self):
+        channel = Itemize()
+
+        channel(">+", "/dev/null")
+
+        self.assertEqual(sys.stdout.getvalue(), "         >+ /dev/null\n")
+        self.assertEqual("", sys.stderr.getvalue())
+
+        sys.stdout.truncate(0)
+
+        channel(">+++++++++++++++++", "/dev/null")
+
+        self.assertEqual(sys.stdout.getvalue(), ">++++++++++ /dev/null\n")
         self.assertEqual("", sys.stderr.getvalue())
 
 

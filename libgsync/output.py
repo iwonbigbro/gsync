@@ -76,7 +76,7 @@ class Verbose(Channel):
 
 class Itemize(object):
     def __call__(self, changes, filename):
-        sys.stdout.write("%11s %s\n" % (str(changes), filename))
+        sys.stdout.write("%11s %s\n" % (str(changes[:11]), filename))
 
 
 class Progress(object):
