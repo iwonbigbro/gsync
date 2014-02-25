@@ -10,15 +10,13 @@ from apiclient.http import MediaFileUpload, MediaUploadProgress
 class SyncFileLocal(SyncFile):
     def getUploader(self, path = None):
         info = self.getInfo(path)
-        if info is None:
+        if info is None: # pragma: no cover
             raise Exception("Could not obtain file information: %s" % path)
 
         path = self.getPath(path)
 
-        f = open(path, "r")
-        if f is None:
-            raise Exception("Open failed: %s" % path)
-        f.close()
+        # Test the file is readable.
+        open(path, "r").close()
 
         return MediaFileUpload(
             path, mimetype = info.mimeType, resumable = True
@@ -57,7 +55,7 @@ class SyncFileLocal(SyncFile):
             )
             debug("Local file = %s" % repr(info), 3)
             debug("Local mtime: %s" % repr(info.modifiedDate))
-        except OSError, e:
+        except OSError, e: # pragma: no cover
             debug("File not found: %s" % repr(path))
             return None
 
@@ -73,13 +71,13 @@ class SyncFileLocal(SyncFile):
         if uid is not None:
             try:
                 os.chown(path, uid, -1)
-            except OSError, e:
+            except OSError, e: # pragma: no cover
                 pass
 
         if gid is not None:
             try:
                 os.chown(path, -1, gid)
-            except OSError, e:
+            except OSError, e: # pragma: no cover
                 pass
 
         if mode is not None:
@@ -107,7 +105,7 @@ class SyncFileLocal(SyncFile):
 
                 return m.hexdigest()
 
-        except Exception, e:
+        except Exception, e: # pragma: no cover
             debug.exception(e)
 
         return None
@@ -127,7 +125,7 @@ class SyncFileLocal(SyncFile):
         try:
             if not GsyncOptions.dry_run:
                 f = open(path, "w")
-        except Exception, e:
+        except Exception, e: # pragma: no cover
             debug("Creation failed: %s" % repr(e))
         finally:
             if f is not None: f.close()
@@ -168,16 +166,16 @@ class SyncFileLocal(SyncFile):
             debug("    Written %d bytes" % bytesWritten)
             progress.complete(bytesWritten)
 
-            if bytesWritten < fileSize:
+            if bytesWritten < fileSize: # pragma: no cover
                 raise Exception("Got %d bytes, expected %d bytes" % (
                     bytesWritten, fileSize
                 ))
 
-        except KeyboardInterrupt:
+        except KeyboardInterrupt: # pragma: no cover
             debug("Interrupted")
             raise
 
-        except Exception, e:
+        except Exception, e: # pragma: no cover
             debug("Write failed: %s" % repr(e))
             raise
 
