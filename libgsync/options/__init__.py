@@ -81,7 +81,12 @@ def GetGsyncOptionsType():
                 cls.__initialiseClass()
                 GsyncListOptions._GsyncListOptions__initialised = True
 
-            return getattr(GsyncListOptions, name)[-1]
+            try:
+                return getattr(GsyncListOptions, name)[-1]
+            except AttributeError:
+                type.__setattr__(GsyncListOptions, name, [ None ])
+
+            return None
 
         def __setattr__(cls, name, value):
             # Substitut option names: --an-option-name for an_option_name

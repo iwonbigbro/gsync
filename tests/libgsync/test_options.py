@@ -13,7 +13,7 @@ class TestGsyncOptions(unittest.TestCase):
     def tearDown(self):
         sys.argv = self.argv
 
-    def test_00_GsyncOptions_is_the_only_object_in_the_module(self):
+    def test_00_is_the_only_object_in_the_module(self):
         import libgsync.options
         found = []
         expected = [ "GsyncOptions" ]
@@ -24,7 +24,7 @@ class TestGsyncOptions(unittest.TestCase):
 
         self.assertEqual(found, expected)
 
-    def test_01_GsyncOptions_is_initialised_on_property_inspection(self):
+    def test_01_is_initialised_on_property_inspection(self):
         import libgsync.options
         GsyncOptions = libgsync.options.GsyncOptions
         GsyncOptionsType = object.__getattribute__(
@@ -43,10 +43,27 @@ class TestGsyncOptions(unittest.TestCase):
         self.assertNotEqual(GsyncOptions.debug, None)
         self.assertEqual(1, myInitClass.call_count)
 
-    def test_02_GsyncOptions_list_options(self):
+    def test_02_list_options(self):
         import libgsync.options
         GsyncOptions = libgsync.options.GsyncOptions
 
         self.assertFalse(isinstance(GsyncOptions.debug, list))
         self.assertTrue(isinstance(GsyncOptions.list().debug, list))
         self.assertEqual(GsyncOptions.debug, GsyncOptions.list().debug[-1])
+
+    def test_03_dynamic_property_creation(self):
+        import libgsync.options
+        GsyncOptions = libgsync.options.GsyncOptions
+
+        GsyncOptions.an_undefined_attribute = "undefined_attribute"
+
+        self.assertEqual(
+            GsyncOptions.an_undefined_attribute,
+            "undefined_attribute"
+        )
+
+        self.assertIsNone(GsyncOptions.another_undefined_attribute)
+
+
+if __name__ == "__main__":
+    unittest.main()
