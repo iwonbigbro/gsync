@@ -151,5 +151,75 @@ class TestItemize(TestCaseStdStringIO):
         self.assertEqual("", sys.stderr.getvalue())
 
 
+class ProgressStatus(object):
+    def __init__(self, total_size = 0, resumable_progress = 0):
+        self.total_size = total_size
+        self.resumable_progress = resumable_progress
+
+    def progress(self):
+        return float(self.resumable_progress) / float(self.total_size)
+
+
+class TestProgress(TestCaseStdStringIO):
+    def test_with_disabled_output(self):
+        channel = Progress(enableOutput = False)
+
+        self.assertEqual("", sys.stdout.getvalue())
+        self.assertEqual("", sys.stderr.getvalue())
+
+    def test_enabled_output_by_default(self):
+        channel = Progress()
+
+        self.assertNotEqual("", sys.stdout.getvalue())
+        self.assertEqual("", sys.stderr.getvalue())
+
+    def test_with_enabled_output(self):
+        channel = Progress(enableOutput = True)
+
+        self.assertNotEqual("", sys.stdout.getvalue())
+        self.assertEqual("", sys.stderr.getvalue())
+
+    def test_status_messages(self):
+        channel = Progress()
+
+        self.assertNotEqual("", sys.stdout.getvalue())
+        self.assertEqual("", sys.stderr.getvalue())
+
+        import re
+
+        for i in ( 5, 10, 20, 40, 50, 75, 100 ):
+            pat = re.compile(
+                r'^\s+%d\s+%d%%\s+\d+\.\d{2}(?:B|KB|MB|GB|TB)/s\s+\d+:\d+:\d+$' % (i, i),
+                re.S | re.M
+            )
+
+            sys.stdout.truncate(0)
+            channel(ProgressStatus(100, i))
+
+            self.assertIsNotNone(pat.search(sys.stdout.getvalue()))
+
+    def test_complete(self):
+        channel = Progress()
+
+        self.assertNotEqual("", sys.stdout.getvalue())
+        self.assertEqual("", sys.stderr.getvalue())
+
+        import re
+        pat = re.compile(
+            r'^\s+%d\s+%d%%\s+\d+\.\d{2}(?:B|KB|MB|GB|TB)/s\s+\d+:\d+:\d+$' % (100, 100),
+            re.S | re.M
+        )
+
+        sys.stdout.truncate(0)
+        channel(ProgressStatus(100, 25))
+
+        self.assertIsNone(pat.search(sys.stdout.getvalue()))
+
+        sys.stdout.truncate(0)
+        channel.complete(100)
+
+        self.assertIsNotNone(pat.search(sys.stdout.getvalue()))
+
+
 if __name__ == "__main__":
     unittest.main()
