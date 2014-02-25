@@ -5,25 +5,25 @@ from dateutil.tz import tzutc
 
 # Provide support for Windows environments.
 try: import posix as os_platform
-except Exception: import nt as os_platform
+except Exception: import nt as os_platform # pragma: no cover
 
 from zlib import compress, decompress
 from base64 import b64encode, b64decode
 
 try: import cPickle as pickle
-except Exception: import pickle
+except Exception: import pickle # pragma: no cover
 
 from libgsync.output import verbose, debug, itemize
 from libgsync.drive.mimetypes import MimeTypes
 from libgsync.options import GsyncOptions
 
-class EUnknownSourceType(Exception):
+class EUnknownSourceType(Exception): # pragma: no cover
     pass
 
-class ESyncFileAbstractMethod(Exception):
+class ESyncFileAbstractMethod(Exception): # pragma: no cover
     pass
 
-class EInvalidStatInfoType(Exception):
+class EInvalidStatInfoType(Exception): # pragma: no cover
     def __init__(self, stype):
         self.statInfoType = stype
 
@@ -118,7 +118,7 @@ class SyncFileInfo(object):
     def __getitem__(self, name):
         return self._dict[name]
 
-    def __repr__(self):
+    def __repr__(self): # pragma: no cover
         return "SyncFileInfo(%s)" % ", ".join([
             "%s = %s" % (repr(k), repr(v)) for k, v in self._dict.iteritems()
         ])
