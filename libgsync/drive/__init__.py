@@ -13,8 +13,8 @@ from libgsync.drive.file import DriveFile
 
 try:
     import gflags
-    #gflags.FLAGS['positional_parameters_enforcement'].value = 'EXCEPTION'
-    gflags.FLAGS['positional_parameters_enforcement'].value = 'IGNORE'
+    #gflags['positional_parameters_enforcement'].value = 'EXCEPTION'
+    gflags['positional_parameters_enforcement'].value = 'IGNORE'
 except ImportError:
     pass
 
