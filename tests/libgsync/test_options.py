@@ -27,21 +27,22 @@ class TestGsyncOptions(unittest.TestCase):
     def test_01_is_initialised_on_property_inspection(self):
         import libgsync.options
         GsyncOptions = libgsync.options.GsyncOptions
-        GsyncOptionsType = object.__getattribute__(
-            GsyncOptions, "__metaclass__"
+        GsyncListOptions = GsyncOptions.list()
+        GsyncListOptionsType = object.__getattribute__(
+            GsyncListOptions, "__metaclass__"
         )
 
-        initClass = GsyncOptionsType._GsyncOptionsType__initialiseClass
-        def myInitClass(*args, **kwargs):
-            myInitClass.call_count += 1
-            initClass(*args, **kwargs)
+        init = GsyncListOptionsType._GsyncListOptionsType__initialiseClass
+        def hookedInit(*args, **kwargs):
+            hookedInit.call_count += 1
+            init(*args, **kwargs)
 
-        myInitClass.call_count = 0
-        GsyncOptionsType._GsyncOptionsType__initialiseClass = myInitClass
+        hookedInit.call_count = 0
+        GsyncListOptionsType._GsyncListOptionsType__initialiseClass = hookedInit
 
         self.assertNotEqual(GsyncOptions.debug, None)
         self.assertNotEqual(GsyncOptions.debug, None)
-        self.assertEqual(1, myInitClass.call_count)
+        self.assertEqual(1, hookedInit.call_count)
 
     def test_02_list_options(self):
         import libgsync.options
@@ -63,6 +64,13 @@ class TestGsyncOptions(unittest.TestCase):
         )
 
         self.assertIsNone(GsyncOptions.another_undefined_attribute)
+        self.assertEqual(
+            GsyncOptions.list().another_undefined_attribute, [ None ]
+        )
+
+        self.assertEqual(
+            GsyncOptions.list().another_listtype_undefined_attribute, [ None ]
+        )
 
 
 if __name__ == "__main__":

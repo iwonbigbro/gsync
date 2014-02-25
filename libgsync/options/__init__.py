@@ -50,10 +50,12 @@
 #
 # ...And all this is neatly hidden within a closure for safe keeping.
 def GetGsyncOptionsType():
-    class GsyncListOptions(object):
+    # The actual class where the options data are stored.
+    class Options(object):
         __initialised = False
 
-    class GsyncOptionsType(type):
+    # An type interface to the static GsyncListOptions class.
+    class GsyncListOptionsType(type):
         def __initialiseClass(cls):
             from docopt import docopt
             from libgsync.options import doc
@@ -73,20 +75,15 @@ def GetGsyncOptionsType():
             for k, v in options.iteritems():
                 setattr(cls, k, v)
 
-        def list(cls):
-            return GsyncListOptions
-
         def __getattr__(cls, name):
-            if not GsyncListOptions._GsyncListOptions__initialised:
+            if not Options._Options__initialised:
                 cls.__initialiseClass()
-                GsyncListOptions._GsyncListOptions__initialised = True
+                Options._Options__initialised = True
 
-            try:
-                return getattr(GsyncListOptions, name)[-1]
-            except AttributeError:
-                type.__setattr__(GsyncListOptions, name, [ None ])
+            if not hasattr(Options, name):
+                type.__setattr__(Options, name, [ None ])
 
-            return None
+            return getattr(Options, name)
 
         def __setattr__(cls, name, value):
             # Substitut option names: --an-option-name for an_option_name
@@ -94,7 +91,7 @@ def GetGsyncOptionsType():
             name = re.sub(r'^__', "", re.sub(r'-', "_", name))
             listvalue = []
 
-            # Ensure value is converted to a list type for GsyncListOptions
+            # Ensure value is converted to a list type for Options
             if isinstance(value, list):
                 if value:
                     listvalue = [] + value
@@ -103,7 +100,22 @@ def GetGsyncOptionsType():
             else:
                 listvalue = [ value ]
 
-            type.__setattr__(GsyncListOptions, name, listvalue)
+            type.__setattr__(Options, name, listvalue)
+
+
+    # Static interface to options as lists.
+    class GsyncListOptions(object):
+        __metaclass__ = GsyncListOptionsType
+
+
+    # An type interface to the static GsyncOptions class.
+    class GsyncOptionsType(GsyncListOptionsType):
+        def list(cls):
+            return GsyncListOptions
+
+        def __getattr__(cls, name):
+            return GsyncListOptionsType.__getattr__(cls, name)[-1]
+
 
     # Cleanup this module to prevent tinkering.
     import sys
@@ -112,6 +124,6 @@ def GetGsyncOptionsType():
 
     return GsyncOptionsType
 
-# Our singlton abstract proxy class.
+# Our singlton abstract proxy class for accessing options.
 class GsyncOptions(object):
     __metaclass__ = GetGsyncOptionsType()
