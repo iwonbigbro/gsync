@@ -203,6 +203,8 @@ class TestProgress(TestCaseStdStringIO):
 
             self.assertIsNotNone(pat.search(sys.stdout.getvalue()))
 
+        self.assertTrue(callback.called)
+
     def test_rate_normalization(self):
         channel = Progress()
 
