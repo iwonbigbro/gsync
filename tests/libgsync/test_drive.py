@@ -44,9 +44,6 @@ def setup_drive_data(testcase):
 
 
 class TestDrivePathCache(unittest.TestCase):
-    def setUp(self):
-        pass
-
     def test_constructor(self):
         dpc = DrivePathCache({
             "junk": "junk",
@@ -106,9 +103,6 @@ class TestDrive(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         setup_drive_data(cls)
-
-    def setUp(self):
-        pass
 
     def test_normpath(self):
         drive = Drive()
@@ -297,13 +291,10 @@ class TestDrive(unittest.TestCase):
         self.assertTrue(progress_callback.called)
 
 
-class TestDriveFile(unittest.TestCase):
+class TestDriveFileObject(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         setup_drive_data(cls)
-
-    def setUp(self):
-        pass
 
     def test_constructor(self):
         data = {
@@ -344,6 +335,35 @@ class TestDriveFile(unittest.TestCase):
 
         self.assertIsNotNone(contents)
         self.assertNotEqual(contents, "")
+
+    @requires_auth
+    def test_revisions(self):
+        drive = Drive()
+
+        num_revisions = 6
+
+        info = drive.create("drive://gsync_unittest/revision_test", {
+            "description": "revision-0"
+        })
+        self.assertEqual(info['description'], "revision-0")
+
+        for revision in range(1, num_revisions):
+            description = "revision-%d" % revision
+            info = drive.update("drive://gsync_unittest/revision_test", {
+                    "description": description
+                },
+                MediaFileUpload("tests/data/open_for_read.txt",
+                    mimetype=MimeTypes.BINARY_FILE, resumable=True
+                )
+            )
+            self.assertEqual(info['description'], description)
+
+        f = drive.open("drive://gsync_unittest/revision_test", "r")
+        revisions = f.revisions()
+
+        self.assertEqual(len(revisions), num_revisions)
+        self.assertEqual(int(revisions[0]['fileSize']), 0)
+        self.assertNotEqual(int(revisions[-1]['fileSize']), 0)
 
 
 if __name__ == "__main__":
