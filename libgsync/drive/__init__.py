@@ -89,7 +89,7 @@ class DriveFileObject(object):
             raise IOError("File is closed: %s" % self._path)
 
     def _requiredModes(self, modes):
-        if self._mode in modes:
+        if self._mode not in modes:
             raise IOError("Operation not permitted: %s()" % name)
 
     def revisions(self):
@@ -181,7 +181,9 @@ class DriveFileObject(object):
         self._requiredOpen()
         self._requiredModes([ "w", "a" ])
 
-        raise NotImplemented("Not currently supported by Google Drive API v2")
+        raise NotImplementedError(
+            "Not currently supported by Google Drive API v2"
+        )
 
 
 class DrivePathCache(object):
