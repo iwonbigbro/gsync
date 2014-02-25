@@ -652,7 +652,7 @@ class _Drive(object):
                     fileId = info.id
                 ).execute()
         except Exception, e:
-            debug("Deltion failed: %s" % repr(e))
+            debug("Deletion failed: %s" % repr(e))
 
     def create(self, path, properties):
         debug("Create file %s" % repr(path))
