@@ -252,6 +252,50 @@ class TestDrive(unittest.TestCase):
         self.assertTrue(isinstance(items, list))
         self.assertTrue("a_file_to_list" in items)
 
+    @requires_auth
+    def test_create(self):
+        drive = Drive()
+
+        info = drive.create("drive://gsync_unittest/create_test", {
+            "title": "Will be overwritten",
+            "description": "Will be kept"
+        })
+        self.assertEqual(info['title'], "create_test")
+        self.assertEqual(info['description'], "Will be kept")
+
+        info2 = drive.create("drive://gsync_unittest/create_test", {
+            "description": "This file will replace the first one"
+        })
+        self.assertNotEqual(info['id'], info2['id'])
+        self.assertEqual(info2['title'], "create_test")
+        self.assertEqual(info2['description'], "This file will replace the first one")
+
+    @requires_auth
+    def test_update_with_progress(self):
+        drive = Drive()
+
+        info = drive.create("drive://gsync_unittest/update_test", {
+            "description": "Old description"
+        })
+        self.assertEqual(info['title'], "update_test")
+
+        def progress_callback(status):
+            progress_callback.called = True
+
+        progress_callback.called = False
+
+        info = drive.update("drive://gsync_unittest/update_test", {
+                "description": "New description"
+            },
+            MediaFileUpload("tests/data/open_for_read.txt",
+                mimetype=MimeTypes.BINARY_FILE, resumable=True
+            ),
+            progress_callback
+        )
+        self.assertEqual(info['description'], "New description")
+        self.assertTrue(int(info['fileSize']) > 0)
+        self.assertTrue(progress_callback.called)
+
 
 class TestDriveFile(unittest.TestCase):
     @classmethod

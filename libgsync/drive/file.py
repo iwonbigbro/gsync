@@ -2,7 +2,7 @@
 
 class DriveFile(object):
     def __init__(self, **kwargs):
-        self._dict = dict(kwargs.items())
+        self.__dict__['_dict'] = dict(kwargs.items())
 
     def keys(self): return self._dict.keys()
     def values(self): return self._dict.values()
@@ -10,8 +10,11 @@ class DriveFile(object):
     def iteritems(self): return self._dict.iteritems()
     def dict(self): return dict(self.items())
 
+    def __setattr__(self, key, value):
+        self._dict[key] = value
+
     def __getattr__(self, key):
-        return self._dict.get(key, self.__dict__.get(key))
+        return self._dict.get(key)
 
     def __getitem__(self, key):
         return self._dict[key]

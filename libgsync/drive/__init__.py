@@ -6,6 +6,7 @@ try: import simplejson as json
 except ImportError: import json
 
 from oauth2client.client import OAuth2Credentials
+from apiclient.http import MediaUploadProgress
 from libgsync.output import verbose, debug
 from libgsync.drive.mimetypes import MimeTypes
 from libgsync.drive.file import DriveFile
@@ -728,7 +729,7 @@ class _Drive(object):
             debug(" * with: %s = %s" % (repr(k), repr(v)))
             setattr(info, k, _Drive.utf8(v))
 
-        debug("mdeia_body type = %s" % type(media_body))
+        debug("media_body type = %s" % type(media_body))
 
         try:
             req = self.service().files().update(
@@ -756,6 +757,11 @@ class _Drive(object):
 
                     if status:
                         progress_callback(status)
+                    elif res:
+                        fileSize = int(res['fileSize'])
+                        progress_callback(
+                            MediaUploadProgress(fileSize, fileSize)
+                        )
 
             # Refresh the cache with the latest revision
             self._pcache.put(path, res)
