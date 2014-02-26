@@ -52,7 +52,6 @@ class Sync(object):
             dstPath = self.dst + ""
             relPath = os.path.basename(dstPath)
             debug("Forcing destination file: %s" % repr(dstPath))
-
         else:
             dstPath = self.dst + relPath
             dstFile = self.dst.getInfo(relPath)
