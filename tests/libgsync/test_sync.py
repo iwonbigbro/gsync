@@ -3,8 +3,8 @@
 # Copyright (C) 2014 Craig Phillips.  All rights reserved.
 
 import unittest, tempfile, sys, os, shutil, hashlib
-from libgsync.sync import Sync
-from libgsync.options import GsyncOptions
+import libgsync.options
+import libgsync.sync
 
 try: import posix as os_platform
 except ImportError: import nt as os_platform
@@ -29,7 +29,8 @@ class TestCaseSync(unittest.TestCase):
         sys.argc = len(sys.argv)
 
         # Reset this flag for tests that do not expect it.
-        GsyncOptions.force_dest_file = None
+        libgsync.options = reload(libgsync.options)
+        libgsync.sync = reload(libgsync.sync)
 
     def tearDown(self):
         sys.argv = self.argv
@@ -42,7 +43,7 @@ class TestCaseSync(unittest.TestCase):
 
         self.assertFalse(os.path.exists(dst))
 
-        sync = Sync(src, self.tempdir)
+        sync = libgsync.sync.Sync(src, self.tempdir)
         sync("open_for_read.txt")
 
         self.assertTrue(os.path.exists(dst))
@@ -59,7 +60,7 @@ class TestCaseSync(unittest.TestCase):
         shutil.copyfile(os.path.join(src, "open_for_read.txt"), dst)
         self.assertTrue(os.path.exists(dst))
 
-        sync = Sync(src, self.tempdir)
+        sync = libgsync.sync.Sync(src, self.tempdir)
         sync("open_for_read.txt")
 
         self.assertTrue(os.path.exists(dst))
@@ -76,7 +77,7 @@ class TestCaseSync(unittest.TestCase):
         shutil.copyfile("/bin/true", dst)
         self.assertTrue(os.path.exists(dst))
 
-        sync = Sync(src, self.tempdir)
+        sync = libgsync.sync.Sync(src, self.tempdir)
         sync("open_for_read.txt")
 
         self.assertTrue(os.path.exists(dst))
@@ -89,11 +90,11 @@ class TestCaseSync(unittest.TestCase):
         src = sys.argv[1]
         dst = os.path.join(self.tempdir, "a_different_filename.txt")
 
-        GsyncOptions.force_dest_file = True
+        libgsync.options.GsyncOptions.force_dest_file = True
 
         self.assertFalse(os.path.exists(dst))
 
-        sync = Sync(src, dst)
+        sync = libgsync.sync.Sync(src, dst)
         sync("open_for_read.txt")
 
         self.assertTrue(os.path.exists(dst))
@@ -108,7 +109,7 @@ class TestCaseSync(unittest.TestCase):
 
         self.assertFalse(os.path.exists(dst))
 
-        sync = Sync(sys.argv[1], dst)
+        sync = libgsync.sync.Sync(sys.argv[1], dst)
         sync("file_not_found.txt")
 
         self.assertFalse(os.path.exists(dst))
