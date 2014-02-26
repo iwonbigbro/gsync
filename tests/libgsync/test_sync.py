@@ -51,6 +51,23 @@ class TestCaseSync(unittest.TestCase):
             sha256sum(dst)
         )
 
+    def test_local_files_with_identical_mimetypes(self):
+        src = sys.argv[1]
+        dst = os.path.join(self.tempdir, "open_for_read.txt")
+
+        # Copy a binary file to ensure it isn't ascii.
+        shutil.copyfile(os.path.join(src, "open_for_read.txt"), dst)
+        self.assertTrue(os.path.exists(dst))
+
+        sync = Sync(src, self.tempdir)
+        sync("open_for_read.txt")
+
+        self.assertTrue(os.path.exists(dst))
+        self.assertEqual(
+            sha256sum(os.path.join(src, "open_for_read.txt")),
+            sha256sum(os.path.join(self.tempdir, "open_for_read.txt"))
+        )
+
     def test_local_files_with_different_mimetypes(self):
         src = sys.argv[1]
         dst = os.path.join(self.tempdir, "open_for_read.txt")
