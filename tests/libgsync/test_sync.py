@@ -86,6 +86,26 @@ class TestCaseSync(unittest.TestCase):
             sha256sum(os.path.join(self.tempdir, "open_for_read.txt"))
         )
 
+    def test_local_files_with_different_sizes(self):
+        src = sys.argv[1]
+        dst = os.path.join(self.tempdir, "open_for_read.txt")
+
+        # Copy a binary file to ensure it isn't ascii.
+        shutil.copyfile(os.path.join(src, "open_for_read.txt"), dst)
+
+        # Alter the destination file size.
+        with open(dst, "a") as f:
+            f.write("Some extra text\n")
+
+        sync = libgsync.sync.Sync(src, self.tempdir)
+        sync("open_for_read.txt")
+
+        self.assertTrue(os.path.exists(dst))
+        self.assertEqual(
+            sha256sum(os.path.join(src, "open_for_read.txt")),
+            sha256sum(os.path.join(self.tempdir, "open_for_read.txt"))
+        )
+
     def test_local_files_force_dest_file(self):
         src = sys.argv[1]
         dst = os.path.join(self.tempdir, "a_different_filename.txt")
