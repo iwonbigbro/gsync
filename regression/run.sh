@@ -56,7 +56,7 @@ while (( $# > 0 )) ; do
 done
 
 if [[ $COVERAGE_PROCESS_START ]] ; then
-    export COVERAGE_DIR=$progdir/coverage
+    export COVERAGE_DIR=$OUTPUT/coverage
     export COVERAGE_PROCESS_START=$COVERAGE_DIR/regression.ini
 
     rm -rf $COVERAGE_DIR
@@ -132,5 +132,15 @@ done
 echo
 
 summary
+
+if [[ $COVERAGE_PROCESS_START ]] ; then
+    python -m coverage combine \
+        --rcfile $COVERAGE_PROCESS_START
+
+    python -m coverage html \
+        --rcfile $COVERAGE_PROCESS_START \
+        --include "*/libgsync/*" \
+        --directory $COVERAGE_DIR
+fi
 
 exit ${e:-0}

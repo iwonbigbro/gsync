@@ -3,6 +3,10 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
 import sys, os, logging, re
+
+try: import coverage ; coverage.process_startup()
+except Exception: pass
+
 from libgsync.options import GsyncOptions
 from libgsync.output import verbose, debug
 from libgsync.crawler import Crawler

@@ -3,6 +3,8 @@
 gsync.egg-info/
 build/
 dist/
+regression/output/
+regression/tmp/
 
 ctags
 
