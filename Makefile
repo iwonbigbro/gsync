@@ -21,6 +21,8 @@ reverse = $(if $(1),$(call reverse,\
 reverse = $(shell printf "%s\n" $(strip $1) | tac)
 
 SRC_FILES:= $(shell find bin/ libgsync/ -type f)
+PYLINT_TARGETS:= $(addprefix pylint/,$(SRC_FILES))
+.PHONY: $(PYLINT_TARGETS)
 
 MANIFEST:= $(if $(wildcard MANIFEST),$(shell cat MANIFEST),)
 RM_MANIFEST:= $(addprefix uninstall_,\
@@ -54,6 +56,14 @@ clean:
 		regression/output/ regression/tmp/
 	@find . -name \*.pyc -delete
 
+check: $(PYLINT_TARGETS)
+
+.pylintrc:
+	@pylint --generate-rcfile >$@
+
+$(PYLINT_TARGETS): pylint/% : % | .pylintrc
+	@pylint -r n --rcfile .pylintrc $<
+
 uninstall: $(RM_MANIFEST)
 	@echo "Uninstall complete"
 
@@ -61,7 +71,7 @@ ctags: $(SRC_FILES)
 	@rm -f $@
 	@ctags -R -f $@ bin/ libgsync/
 
-install: /usr/local/bin/gsync
+install: check /usr/local/bin/gsync
 
 bdist build: setup.py $(SRC_FILES)
 	@./setup.py $@
