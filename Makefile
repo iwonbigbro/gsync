@@ -11,6 +11,8 @@ all:
 
 ifneq (0,$(shell id -u))
 SUDO:= sudo
+else
+SUDO:=
 endif
 
 reverse = $(if $(1),$(call reverse,\
