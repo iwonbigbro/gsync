@@ -55,7 +55,7 @@ class SyncFileLocal(SyncFile):
             )
             debug("Local file = %s" % repr(info), 3)
             debug("Local mtime: %s" % repr(info.modifiedDate))
-        except OSError, e: # pragma: no cover
+        except OSError, exc: # pragma: no cover
             debug("File not found: %s" % repr(path))
             return None
 
@@ -71,13 +71,13 @@ class SyncFileLocal(SyncFile):
         if uid is not None:
             try:
                 os.chown(path, uid, -1)
-            except OSError, e: # pragma: no cover
+            except OSError, exc: # pragma: no cover
                 pass
 
         if gid is not None:
             try:
                 os.chown(path, -1, gid)
-            except OSError, e: # pragma: no cover
+            except OSError, exc: # pragma: no cover
                 pass
 
         if mode is not None:
@@ -105,8 +105,8 @@ class SyncFileLocal(SyncFile):
 
                 return m.hexdigest()
 
-        except Exception, e: # pragma: no cover
-            debug.exception(e)
+        except Exception, exc: # pragma: no cover
+            debug.exception(exc)
 
         return None
 
@@ -125,8 +125,8 @@ class SyncFileLocal(SyncFile):
         try:
             if not GsyncOptions.dry_run:
                 f = open(path, "w")
-        except Exception, e: # pragma: no cover
-            debug("Creation failed: %s" % repr(e))
+        except Exception, exc: # pragma: no cover
+            debug("Creation failed: %s" % repr(exc))
         finally:
             if f is not None: f.close()
 
@@ -175,8 +175,8 @@ class SyncFileLocal(SyncFile):
             debug("Interrupted")
             raise
 
-        except Exception, e: # pragma: no cover
-            debug("Write failed: %s" % repr(e))
+        except Exception, exc: # pragma: no cover
+            debug("Write failed: %s" % repr(exc))
             raise
 
         finally:

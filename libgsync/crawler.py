@@ -149,13 +149,13 @@ class Crawler(object):
         try:
             self._walk(srcpath, self._walkCallback, self._dev)
 
-        except KeyboardInterrupt, e:
+        except KeyboardInterrupt, exc:
             print("\nInterrupted")
             raise
 
-        except Exception, e:
-            debug.exception(e)
-            print("Error: %s" % repr(e))
+        except Exception, exc:
+            debug.exception(exc)
+            print("Error: %s" % repr(exc))
 
         finally:
             verbose("sent %d bytes  received %d bytes  %.2f bytes/sec" % (

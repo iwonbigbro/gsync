@@ -103,8 +103,8 @@ class DriveFileObject(object):
             ).execute()
             return revisions.get('items', [])
 
-        except Exception, e: # pragma: no cover
-            debug.exception(e)
+        except Exception, exc: # pragma: no cover
+            debug.exception(exc)
             return None
 
     def mimetype(self, mimeType = None):
@@ -380,8 +380,8 @@ class _Drive(object):
                 with open(client_json, "w") as f:
                     f.write(json.dumps(client_obj))
 
-            except Exception, e:
-                debug("Exception: %s" % repr(e))
+            except Exception, exc:
+                debug("Exception: %s" % repr(exc))
                 raise
 
         if not os.path.exists(client_json):
@@ -422,12 +422,12 @@ class _Drive(object):
 
         try:
             names = self.listdir(top)
-        except Exception, e:
+        except Exception, exc:
             debug.exception()
-            debug("Exception: %s" % repr(e))
+            debug("Exception: %s" % repr(exc))
 
             if onerror is not None:
-                onerror(e)
+                onerror(exc)
             return
 
         debug("Separating directories from files...")
@@ -619,9 +619,9 @@ class _Drive(object):
                 self._pcache.put(path, info)
                 ent = DriveFile(path = _Drive.unicode(normpath), **info)
                 return ent
-        except Exception, e: # pragma: no cover
+        except Exception, exc: # pragma: no cover
             debug.exception()
-            debug("Failed to create directory: %s" % repr(e))
+            debug("Failed to create directory: %s" % repr(exc))
 
         raise IOError("Failed to create directory: %s" % path)
 
@@ -660,8 +660,8 @@ class _Drive(object):
                 self.service().files().trash(
                     fileId = info.id
                 ).execute()
-        except Exception, e: # pragma: no cover
-            debug("Deletion failed: %s" % repr(e))
+        except Exception, exc: # pragma: no cover
+            debug("Deletion failed: %s" % repr(exc))
 
     def create(self, path, properties):
         debug("Create file %s" % repr(path))
@@ -704,8 +704,8 @@ class _Drive(object):
 
             debug(" * file created")
             return ent
-        except Exception, e: # pragma: no cover
-            debug("Creation failed: %s" % repr(e))
+        except Exception, exc: # pragma: no cover
+            debug("Creation failed: %s" % repr(exc))
 
         return None
 
@@ -752,8 +752,8 @@ class _Drive(object):
 
                     try:
                         status, res = req.next_chunk()
-                    except Exception, e:
-                        debug("Exception: %s" % str(e))
+                    except Exception, exc:
+                        debug("Exception: %s" % str(exc))
                         debug.exception()
                         break
 
@@ -770,8 +770,8 @@ class _Drive(object):
 
             return res
 
-        except Exception, e: # pragma: no cover
-            debug("Update failed: %s" % repr(e))
+        except Exception, exc: # pragma: no cover
+            debug("Update failed: %s" % repr(exc))
             debug.exception()
             raise
     

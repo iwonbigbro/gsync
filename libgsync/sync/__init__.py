@@ -189,7 +189,7 @@ class Sync(object):
             elif update:
                 self.dst.update(dstPath, srcFile)
 
-        except KeyboardInterrupt, e:
+        except KeyboardInterrupt, exc:
             debug("Interrupted")
             raise
         finally:

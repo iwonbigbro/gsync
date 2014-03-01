@@ -48,7 +48,7 @@ class SyncFileInfoDatetime(object):
     def __getattr__(self, name):
         try:
             return self.__dict__[name]
-        except Exception, e:
+        except Exception, exc:
             return getattr(self.__d, name)
 
     def __repr__(self): return "SyncFileInfoDatetime(%s)" % repr(self.__d)
@@ -152,8 +152,8 @@ class SyncFileInfo(object):
                     pickle.loads(decompress(b64decode(value)))
                 self._dict['description'] = value
                 return
-            except Exception, e:
-                debug("Base 64 decode failed: %s" % repr(e))
+            except Exception, exc:
+                debug("Base 64 decode failed: %s" % repr(exc))
                 pass
 
             # That failed, try to decode using old hex encoding.
@@ -161,8 +161,8 @@ class SyncFileInfo(object):
                 self._dict['statInfo'] = pickle.loads(value.decode("hex"))
                 self._dict['description'] = value
                 return
-            except Exception, e:
-                debug("Hex decode failed: %s" % repr(e))
+            except Exception, exc:
+                debug("Hex decode failed: %s" % repr(exc))
                 pass
 
             debug("Failed to decode string: %s" % repr(value))
