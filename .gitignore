@@ -7,6 +7,5 @@ regression/output/
 regression/tmp/
 
 ctags
-.pylintrc
 
 MANIFEST
