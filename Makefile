@@ -1,4 +1,4 @@
-# Copyright (C) 2013 Craig Phillips.  All rights reserved.
+# Copyright (C) 2013-2014 Craig Phillips.  All rights reserved.
 #
 # GSync top level makefile.
 
@@ -8,6 +8,10 @@ all:
 	@echo "    uninstall      Remove the GSync application from this system"
 	@echo "    runtests       Run Gsync unit and regression tests"
 	@echo "    ctags          Generate ctags file"
+
+ifneq (0,$(shell id -u))
+SUDO:= sudo
+endif
 
 reverse = $(if $(1),$(call reverse,\
 	$(wordlist 2,$(words $(1)),$(1)))) $(firstword $(1)\
@@ -61,8 +65,9 @@ bdist build: setup.py $(SRC_FILES)
 	@./setup.py $@
 
 /usr/local/bin/gsync: build bdist
-	@sudo ./setup.py install --record MANIFEST
-	@sudo find /usr/local/lib/python2.7/dist-packages/ ! -perm -o=r -exec chmod o+r {} \;
+	@$(SUDO) ./setup.py install --record MANIFEST
+	@$(SUDO) find /usr/local/lib/python2.7/dist-packages/ \
+		! -perm -o=r -exec chmod o+r {} \;
 
 PY_COVERAGE:=$(if $(COVERAGE),$(shell which coverage),)
 
