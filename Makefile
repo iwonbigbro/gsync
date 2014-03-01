@@ -75,4 +75,4 @@ else
 endif
 
 run_regression:
-	@./tests/regression.py
+	@./regression/run.sh --verbose-no-tty
