@@ -21,7 +21,7 @@ reverse = $(if $(1),$(call reverse,\
 reverse = $(shell printf "%s\n" $(strip $1) | tac)
 
 SRC_FILES:= $(shell find bin/ libgsync/ -type f)
-PYLINT_TARGETS:= $(addprefix pylint/,$(SRC_FILES))
+PYLINT_TARGETS:= $(if $(shell which pylint),$(addprefix pylint/,$(SRC_FILES)),)
 .PHONY: $(PYLINT_TARGETS)
 
 MANIFEST:= $(if $(wildcard MANIFEST),$(shell cat MANIFEST),)
