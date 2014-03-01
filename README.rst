@@ -55,7 +55,11 @@ That's it.  GSync will be installed along with any required packages.
 Authentication:
 ===============================================================================
 
-Authentication occurs just once, the first time a connection is established with your drive. To establish a connection, just specify a drive source or destination file like:
+Authentication occurs just once, the first time a connection is established with your drive. To establish a connection, just specify the --authenticate option with no other options or arguments:
+
+    $ gsync --authenticate
+
+Or alternatively, just specify a drive source or destination file like:
 
     $ gsync drive://somepath/in/your/drive ~/some/local/path
 
