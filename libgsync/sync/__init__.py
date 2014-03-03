@@ -269,7 +269,7 @@ class Sync(object):
         debug("Destination: %s" % repr(self.dst))
         debug("Relative: %s" % repr(rel_path))
 
-        src_file = self.src.getInfo(rel_path)
+        src_file = self.src.get_info(rel_path)
         if src_file is None:
             debug("File not found: %s" % repr(path))
             return None
@@ -279,12 +279,12 @@ class Sync(object):
         debug("force_dest_file = %s" % GsyncOptions.force_dest_file)
 
         if GsyncOptions.force_dest_file:
-            dst_file = self.dst.getInfo()
+            dst_file = self.dst.get_info()
             dst_path = self.dst + ""
             rel_path = os.path.basename(dst_path)
         else:
             dst_path = self.dst + rel_path
-            dst_file = self.dst.getInfo(rel_path)
+            dst_file = self.dst.get_info(rel_path)
 
         debug("src_file = %s" % repr(src_file), 3)
         debug("dst_file = %s" % repr(dst_file), 3)

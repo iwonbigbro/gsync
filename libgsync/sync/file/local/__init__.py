@@ -8,12 +8,12 @@ from libgsync.options import GsyncOptions
 from apiclient.http import MediaFileUpload, MediaUploadProgress
 
 class SyncFileLocal(SyncFile):
-    def getUploader(self, path = None):
-        info = self.getInfo(path)
+    def get_uploader(self, path = None):
+        info = self.get_info(path)
         if info is None: # pragma: no cover
             raise Exception("Could not obtain file information: %s" % path)
 
-        path = self.getPath(path)
+        path = self.get_path(path)
 
         # Test the file is readable.
         open(path, "r").close()
@@ -22,8 +22,8 @@ class SyncFileLocal(SyncFile):
             path, mimetype = info.mimeType, resumable = True
         )
 
-    def getInfo(self, path = None):
-        path = self.getPath(path)
+    def get_info(self, path = None):
+        path = self.get_path(path)
 
         debug("Fetching local file metadata: %s" % repr(path))
 
@@ -110,14 +110,14 @@ class SyncFileLocal(SyncFile):
 
         return None
 
-    def _createDir(self, path, src = None):
+    def _create_dir(self, path, src = None):
         debug("Creating local directory: %s" % repr(path))
 
         if not GsyncOptions.dry_run:
             os.mkdir(path)
 
-    def _createFile(self, path, src):
-        path = self.getPath(path)
+    def _create_file(self, path, src):
+        path = self.get_path(path)
 
         debug("Creating local file: %s" % repr(path))
 
@@ -131,12 +131,12 @@ class SyncFileLocal(SyncFile):
             if f is not None: f.close()
 
     def _update_data(self, path, src):
-        path = self.getPath(path)
-        info = self.getInfo(path)
+        path = self.get_path(path)
+        info = self.get_info(path)
 
         debug("Updating local file %s" % repr(path))
 
-        uploader = src.getUploader()
+        uploader = src.get_uploader()
 
         f = None
         bytesWritten = 0

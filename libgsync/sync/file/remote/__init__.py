@@ -1,4 +1,8 @@
-# Copyright (C) 2013 Craig Phillips.  All rights reserved.
+#!/usr/bin/env python
+
+# Copyright (C) 2013-2014 Craig Phillips.  All rights reserved.
+
+"""Remote file synchronisation"""
 
 import os, re, datetime
 from libgsync.output import verbose, debug, itemize, Progress
@@ -7,7 +11,10 @@ from libgsync.options import GsyncOptions
 from apiclient.http import MediaIoBaseUpload, MediaUploadProgress
 from libgsync.drive import Drive
 
+
 class SyncFileRemote(SyncFile):
+    """SyncFileRemote implementation for the SyncFile adapter"""
+    
     def __init__(self, path):
         super(SyncFileRemote, self).__init__(path)
         self._path = self.normpath(path)
@@ -19,39 +26,42 @@ class SyncFileRemote(SyncFile):
         return Drive().normpath(path)
 
     def strippath(self, path):
+        """Strips path of the 'drive://' prefix using the Drive() method"""
         return Drive().strippath(path)
 
-    def getPath(self, path = None):
+    def get_path(self, path = None):
         if path is None or path == "":
             return self._path
 
-        selfStripPath = self.strippath(self._path)
-        stripPath = self.strippath(path)
+        stripped_path = self.strippath(self._path)
+        stripped_rel_path = self.strippath(path)
 
-        debug("Joining: %s with %s" % (repr(selfStripPath), repr(stripPath)))
-        ret = self.normpath(os.path.join(selfStripPath, stripPath))
+        debug("Joining: %s with %s" % (
+            repr(stripped_path), repr(stripped_rel_path))
+        )
+        ret = self.normpath(os.path.join(stripped_path, stripped_rel_path))
 
         debug(" * got: %s" % repr(ret))
         return ret
 
-    def getUploader(self, path = None):
-        info = self.getInfo(path)
+    def get_uploader(self, path = None):
+        info = self.get_info(path)
         if info is None:
             raise Exception("Could not obtain file information: %s" % path)
 
-        path = self.getPath(path)
+        path = self.get_path(path)
         drive = Drive()
 
         debug("Opening remote file for reading: %s" % repr(path))
 
-        f = drive.open(path, "r")
-        if f is None:
+        fd = drive.open(path, "r")
+        if fd is None:
             raise Exception("Open failed: %s" % path)
 
-        return MediaIoBaseUpload(f, info.mimeType, resumable=True)
+        return MediaIoBaseUpload(fd, info.mimeType, resumable=True)
 
-    def getInfo(self, path = None):
-        path = self.getPath(path)
+    def get_info(self, path = None):
+        path = self.get_path(path)
 
         debug("Fetching remote file metadata: %s" % repr(path))
 
@@ -69,77 +79,84 @@ class SyncFileRemote(SyncFile):
 
         return info
 
-    def _createDir(self, path, src = None):
+    def _create_dir(self, path, src = None):
         debug("Creating remote directory: %s" % repr(path))
 
         if not GsyncOptions.dry_run:
             drive = Drive()
             drive.mkdir(path)
 
-    def _createFile(self, path, src):
+    def _create_file(self, path, src):
         debug("Creating remote file: %s" % repr(path))
 
-        if GsyncOptions.dry_run: return
+        if GsyncOptions.dry_run:
+            return
 
         drive = Drive()
-        info = drive.create(path, src.getInfo())
+        info = drive.create(path, src.get_info())
 
         if info is None:
             debug("Creation failed")
 
+    def _update_dir(self, path, src):
+        pass
+
     def _update_data(self, path, src):
         debug("Updating remote file: %s" % repr(path))
 
-        totalBytesWritten = self.bytesWritten
-        bytesWritten = 0
-        info = src.getInfo()
+        total_bytes_written = self.bytes_written
+        bytes_written = 0
+        info = src.get_info()
 
-        def _callback(status):
-            bytesWritten = int(status.resumable_progress)
-            self.bytesWritten = totalBytesWritten + bytesWritten
+        def __callback(status):
+            bytes_written = int(status.resumable_progress)
+            self.bytes_written = total_bytes_written + bytes_written
             
-        progress = Progress(GsyncOptions.progress, _callback)
+        progress = Progress(GsyncOptions.progress, __callback)
 
         if GsyncOptions.dry_run:
-            bytesWritten = info.fileSize
-            progress(MediaUploadProgress(bytesWritten, bytesWritten))
+            bytes_written = info.fileSize
+            progress(MediaUploadProgress(bytes_written, bytes_written))
         else:
             progress.bytesTotal = info.fileSize
 
             drive = Drive()
-            info = drive.update(path, info, src.getUploader(), progress)
+            info = drive.update(path, info, src.get_uploader(), progress)
 
             if info is not None:
-                bytesWritten = long(info.get('fileSize', '0'))
-                debug("Final file size: %d" % bytesWritten)
+                bytes_written = long(info.get('fileSize', '0'))
+                debug("Final file size: %d" % bytes_written)
             else:
                 debug("Update failed")
 
-        progress.complete(bytesWritten)
-        self.bytesWritten = totalBytesWritten + bytesWritten
+        progress.complete(bytes_written)
+        self.bytes_written = total_bytes_written + bytes_written
 
-    def _update_attrs(self, path, src, mode, uid, gid, mtime, atime):
-        debug("Updating remote file stats: %s" % repr(path))
+    def _update_attrs(self, path, src, attrs):
+        debug("Updating remote file attrs: %s" % repr(path))
 
-        if GsyncOptions.dry_run: return
+        if GsyncOptions.dry_run:
+            return
 
-        info = self.getInfo(path)
-        if not info: return
+        info = self.get_info(path)
+        if not info:
+            return
 
         st_info = list(tuple(info.statInfo))
 
-        if mode is not None:
-            st_info[0] = mode
-        if uid is not None:
-            st_info[4] = uid
-        if gid is not None:
-            st_info[5] = gid
-        if atime is not None:
-            st_info[7] = atime
+        if attrs.mode is not None:
+            st_info[0] = attrs.mode
+        if attrs.uid is not None:
+            st_info[4] = attrs.uid
+        if attrs.gid is not None:
+            st_info[5] = attrs.gid
+        if attrs.atime is not None:
+            st_info[7] = attrs.atime
         
-        info._setStatInfo(st_info)
+        info.set_stat_info(st_info)
 
-        mtime_utc = datetime.datetime.utcfromtimestamp(mtime).isoformat()
+        mtime_utc = datetime.datetime.utcfromtimestamp(
+            attrs.mtime).isoformat()
             
         Drive().update(path, properties = {
             'description': info.description,

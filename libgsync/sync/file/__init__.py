@@ -89,7 +89,7 @@ class SyncFileInfo(object):
             'path': misc['path']
         }
 
-        self._setStatInfo(description)
+        self.set_stat_info(description)
 
     def iteritems(self): return self._dict.iteritems()
     def values(self): return self._dict.values()
@@ -105,7 +105,7 @@ class SyncFileInfo(object):
             return
 
         if name in [ "description", "statInfo" ]:
-            self._setStatInfo(value)
+            self.set_stat_info(value)
             return
 
         debug("Setting: %s = %s" % (repr(name), repr(value)))
@@ -120,7 +120,7 @@ class SyncFileInfo(object):
             "%s = %s" % (repr(k), repr(v)) for k, v in self._dict.iteritems()
         ])
 
-    def _setStatInfo(self, value):
+    def set_stat_info(self, value):
         if value is None:
             value = (0,0,0,0,0,0,0,0,0,0)
 
@@ -171,57 +171,71 @@ class SyncFileInfo(object):
         raise EInvalidStatInfoType(type(value))
 
 
-class SyncFile(object):
-    path = None
-    bytesRead = 0
-    bytesWritten = 0
+class SyncFileAttrs(object):
+    def __init__(self):
+        self.mode = None
+        self.uid = None
+        self.gid = None
+        self.mtime = None
+        self.atime = None
 
+    def __setattr__(self, name, value):
+        if value is not None:
+            debug(" * Updating with %s: %d" % (name, value))
+
+        super(SyncFileAttrs, self).__setattr__(name, value)
+
+
+class SyncFile(object):
     def __init__(self, path):
         if isinstance(path, SyncFile):
             self._path = path._path
         else:
             self._path = path
 
+        self.bytes_read = 0
+        self.bytes_written = 0
+
     def __str__(self):
         return self._path
 
     def __add__(self, path):
-        return self.getPath(path)
+        return self.get_path(path)
 
-    def getPath(self, path = None):
+    def get_path(self, path = None):
         if not path: return self._path
 
         debug("Joining: %s with %s" % (repr(self._path), repr(path)))
         return os.path.join(self._path, path)
 
-    def getUploader(self, path = None): # pragma: no cover
+    def get_uploader(self, path = None): # pragma: no cover
         raise NotImplementedError
 
-    def getInfo(self, path = None): # pragma: no cover
+    def get_info(self, path = None): # pragma: no cover
         raise NotImplementedError
 
-    def _createDir(self, path, src = None): # pragma: no cover
+    def _create_dir(self, path, src = None): # pragma: no cover
         raise NotImplementedError
 
     def _update_dir(self, path, src): # pragma: no cover
         raise NotImplementedError
 
-    def _createFile(self, path, src): # pragma: no cover
+    def _create_file(self, path, src): # pragma: no cover
         raise NotImplementedError
 
     def _update_data(self, path, src): # pragma: no cover
         raise NotImplementedError
 
-    def _update_attrs(self, path, src, mode, uid, gid, mtime, atime): # pragma: no cover
+    def _update_attrs(self, path, src, attrs): # pragma: no cover
         raise NotImplementedError
 
-    def __createFile(self, path, src = None):
-        self._createFile(path, src)
+    def __create_file(self, path, src = None):
+        self._create_file(path, src)
         self._update_data(path, src)
         self.__update_attrs(path, src)
 
-    def __createDir(self, path, src = None):
-        self._createDir(path, src)
+    def __create_dir(self, path, src = None):
+        self._create_dir(path, src)
         self.__update_attrs(path, src)
 
     def __update_data(self, path, src):
@@ -233,43 +247,34 @@ class SyncFile(object):
     def __update_attrs(self, path, src):
         if src is None: return
 
-        srcInfo = src.getInfo()
+        srcInfo = src.get_info()
         srcStatInfo = srcInfo.statInfo
 
-        mode, uid, gid, atime, mtime = None, None, None, None, None
+        attrs = SyncFileAttrs()
 
         debug("Updating: %s" % repr(path))
 
         if srcStatInfo is not None:
             if GsyncOptions.perms:
-                mode = srcStatInfo.st_mode
-                if mode is not None:
-                    debug(" * Updating with mode: %d" % mode)
+                attrs.mode = srcStatInfo.st_mode
 
             if GsyncOptions.owner:
-                uid = srcStatInfo.st_uid
-                if uid is not None:
-                    debug(" * Updating with uid: %d" % uid)
+                attrs.uid = srcStatInfo.st_uid
 
             if GsyncOptions.group:
-                gid = srcStatInfo.st_gid
-                if gid is not None:
-                    debug(" * Updating with gid: %d" % gid)
+                attrs.gid = srcStatInfo.st_gid
 
         if GsyncOptions.times:
-            mtime = float(srcInfo.modifiedDate)
+            attrs.mtime = float(srcInfo.modifiedDate)
         else:
-            mtime = float(time.time())
+            attrs.mtime = float(time.time())
 
         if srcStatInfo is not None:
-            atime = srcStatInfo.st_atime
+            attrs.atime = srcStatInfo.st_atime
         else:
-            atime = mtime
+            attrs.atime = attrs.mtime
 
-        debug(" * Updating with mtime: %0.2f" % mtime)
-        debug(" * Updating with atime: %0.2f" % atime)
-
-        self._update_attrs(path, src, mode, uid, gid, mtime, atime)
+        self._update_attrs(path, src, attrs)
 
 
     def _normaliseSource(self, src):
@@ -288,13 +293,13 @@ class SyncFile(object):
 
             elif isinstance(src, SyncFile):
                 srcObj = src
-                srcInfo = src.getInfo()
+                srcInfo = src.get_info()
                 srcPath = src.path
 
             elif isinstance(src, str) or isinstance(src, unicode):
                 srcPath = src
                 srcObj = SyncFileFactory.create(srcPath)
-                srcInfo = srcObj.getInfo()
+                srcInfo = srcObj.get_info()
 
             else:
                 raise EUnknownSourceType("%s is a %s" % (
@@ -309,10 +314,10 @@ class SyncFile(object):
         (srcPath, srcInfo, srcObj) = self._normaliseSource(src)
 
         if srcInfo is None or srcInfo.mimeType == MimeTypes.FOLDER:
-            self.__createDir(path, srcObj)
+            self.__create_dir(path, srcObj)
             return
 
-        self.__createFile(path, srcObj)
+        self.__create_file(path, srcObj)
 
     def update_data(self, path, src):
         (srcPath, srcInfo, srcObj) = self._normaliseSource(src)
