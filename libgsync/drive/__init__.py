@@ -1,9 +1,17 @@
+#!/usr/bin/env python
+
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
+
+"""The GSync Drive module that provides an interface to the Google Drive"""
 
 import os, sys, re, datetime, shelve, time
 
-try: import simplejson as json
-except ImportError: import json # pragma: no cover
+from contextlib import contextmanager
+
+try:
+    import simplejson as json
+except ImportError:
+    import json # pragma: no cover
 
 import oauth2client.util
 oauth2client.util.positional_parameters_enforcement = \
@@ -38,6 +46,9 @@ class EFileNotFound(Exception): # pragma: no cover
 
     def __str__(self):
         return "File not found: %s" % repr(self.filename)
+
+class ENoService(Exception):
+    pass
 
 
 class DriveFileObject(object):
@@ -97,15 +108,14 @@ class DriveFileObject(object):
             raise IOError("Operation not permitted: %s()" % name)
 
     def revisions(self):
-        try:
-            revisions = self._drive.service().revisions().list(
+        with self._drive.service() as service:
+            revisions = service.revisions().list(
                 fileId=self._info.id
             ).execute()
+
             return revisions.get('items', [])
 
-        except Exception, exc: # pragma: no cover
-            debug.exception(exc)
-            return None
+        return None
 
     def mimetype(self, mimeType = None):
         if mimeType is not None:
@@ -147,39 +157,39 @@ class DriveFileObject(object):
 
         self._requiredOpen()
 
-        service = self._drive.service()
-        http = service._http
-        http.follow_redirects = False 
+        with self._drive.service() as service:
+            http = service._http
+            http.follow_redirects = False 
 
-        if length is None:
-            length = self._size - self._offset
+            if length is None:
+                length = self._size - self._offset
 
-        if length <= 0: return ""
+            if length <= 0: return ""
 
-        url = service.files().get(
-            fileId=self._info.id
-        ).execute().get('downloadUrl')
+            url = service.files().get(
+                fileId=self._info.id
+            ).execute().get('downloadUrl')
 
-        if not url: return ""
+            if not url: return ""
 
-        headers = {
-            'range': 'bytes=%d-%d' % ( 
-                self._offset,
-                self._offset + length
-            ) 
-        }
+            headers = {
+                'range': 'bytes=%d-%d' % ( 
+                    self._offset,
+                    self._offset + length
+                ) 
+            }
 
-        res, data = http.request(url, headers=headers)
-        retry = res.status in [ 301, 302, 303, 307, 308 ] \
-            and 'location' in res
+            res, data = http.request(url, headers=headers)
+            retry = res.status in [ 301, 302, 303, 307, 308 ] \
+                and 'location' in res
 
-        if retry: # pragma: no cover
-            url = res['location'] 
-            res, data = http.request(url, headers=headers) 
+            if retry: # pragma: no cover
+                url = res['location'] 
+                res, data = http.request(url, headers=headers) 
 
-        if res.status in [ 200, 206 ]:
-            self._offset += length
-            return data
+            if res.status in [ 200, 206 ]:
+                self._offset += length
+                return data
 
         return "" # pragma: no cover
 
@@ -222,7 +232,6 @@ class _Drive(object):
         self._service = None
         self._http = None
         self._credentials = None
-        self._service = None
         self._credentialStorage = None
         self.reinit()
 
@@ -259,9 +268,11 @@ class _Drive(object):
     def utf8(s):
         return _Drive.unicode(s).encode("utf-8")
 
+    @contextmanager
     def service(self):
         if self._service is not None:
-            return self._service
+            yield self._service
+            return
 
         storage = self._getCredentialStorage()
         if storage is not None:
@@ -300,14 +311,14 @@ class _Drive(object):
             apistr = content
 
         if not apistr:
-            return None
+            raise ENoService
 
         debug("Building Google Drive service from document")
         self._service = build_from_document(
             apistr, http = http, base = DISCOVERY_URI
         )
 
-        return self._service
+        yield self._service
 
     def __del__(self): # pragma: no cover
         debug("Saving credentials...")
@@ -380,8 +391,8 @@ class _Drive(object):
                 with open(client_json, "w") as f:
                     f.write(json.dumps(client_obj))
 
-            except Exception, exc:
-                debug("Exception: %s" % repr(exc))
+            except Exception, ex:
+                debug("Exception: %s" % repr(ex))
                 raise
 
         if not os.path.exists(client_json):
@@ -422,12 +433,12 @@ class _Drive(object):
 
         try:
             names = self.listdir(top)
-        except Exception, exc:
+        except Exception, ex:
             debug.exception()
-            debug("Exception: %s" % repr(exc))
+            debug("Exception: %s" % repr(ex))
 
             if onerror is not None:
-                onerror(exc)
+                onerror(ex)
             return
 
         debug("Separating directories from files...")
@@ -583,31 +594,31 @@ class _Drive(object):
         debug("spath = %s" % repr(spath))
         debug("normpath = %s" % repr(normpath))
 
-        try:
-            dirname, basename = os.path.split(normpath)
-            debug("dirname = %s, basename = %s" % (
-                repr(dirname), repr(basename)
-            ))
-            if dirname in [ "/", "drive:" ]:
-                parentId = "root"
-            else:
-                parent = self.stat(dirname)
-                debug("Failed to stat directory: %s" % repr(dirname))
+        dirname, basename = os.path.split(normpath)
+        debug("dirname = %s, basename = %s" % (
+            repr(dirname), repr(basename)
+        ))
+        if dirname in [ "/", "drive:" ]:
+            parentId = "root"
+        else:
+            parent = self.stat(dirname)
+            debug("Failed to stat directory: %s" % repr(dirname))
+
+            if not parent:
+                if normpath != dirname:
+                    parent = self.mkdir(dirname)
 
                 if not parent:
-                    if normpath != dirname:
-                        parent = self.mkdir(dirname)
+                    debug("Failed to create parent: %s" % repr(dirname))
+                    return None
 
-                    if not parent:
-                        debug("Failed to create parent: %s" % repr(dirname))
-                        return None
+            debug("Got parent: %s" % repr(parent))
+            parentId = parent.id
 
-                debug("Got parent: %s" % repr(parent))
-                parentId = parent.id
+        debug("Creating directory: %s" % repr(normpath))
 
-            debug("Creating directory: %s" % repr(normpath))
- 
-            info = self.service().files().insert(
+        with self.service() as service:
+            info = service.files().insert(
                 body = {
                     'title': basename,
                     'mimeType': MimeTypes.FOLDER,
@@ -619,9 +630,6 @@ class _Drive(object):
                 self._pcache.put(path, info)
                 ent = DriveFile(path = _Drive.unicode(normpath), **info)
                 return ent
-        except Exception, exc: # pragma: no cover
-            debug.exception()
-            debug("Failed to create directory: %s" % repr(exc))
 
         raise IOError("Failed to create directory: %s" % path)
 
@@ -649,19 +657,17 @@ class _Drive(object):
         info = self.stat(path)
         if info is None: return
 
-        try:
+        with self.service() as service:
             if skipTrash:
                 debug("Deleting: %s (id: %s)" % (repr(path), info.id))
-                self.service().files().delete(
-                    fileId = info.id
-                ).execute()
+                service.files().delete(fileId = info.id).execute()
             else:
                 debug("Trashing: %s (id: %s)" % (repr(path), info.id))
-                self.service().files().trash(
-                    fileId = info.id
-                ).execute()
-        except Exception, exc: # pragma: no cover
-            debug("Deletion failed: %s" % repr(exc))
+                service.files().trash(fileId = info.id).execute()
+
+            return
+
+        debug("Deletion failed: %s" % repr(ex))
 
     def create(self, path, properties):
         debug("Create file %s" % repr(path))
@@ -675,26 +681,26 @@ class _Drive(object):
 
         debug(" * parentId = %s" % repr(parentId))
 
-        try:
-            # Get the file info and delete existing file.
-            info = self.stat(path)
-            if info is not None:
-                debug(" * deleting existing...")
-                self.delete(path)
+        # Get the file info and delete existing file.
+        info = self.stat(path)
+        if info is not None:
+            debug(" * deleting existing...")
+            self.delete(path)
 
-            debug(" * merging properties...")
-            body = {}
-            for k, v in properties.iteritems():
-                body[k] = _Drive.utf8(v)
+        debug(" * merging properties...")
+        body = {}
+        for k, v in properties.iteritems():
+            body[k] = _Drive.utf8(v)
 
-            # Retain the title from the path being created.
-            body['title'] = _Drive.utf8(os.path.basename(path))
+        # Retain the title from the path being created.
+        body['title'] = _Drive.utf8(os.path.basename(path))
 
-            if parentId:
-                body['parents'] = [{'id': parentId}]
+        if parentId:
+            body['parents'] = [{'id': parentId}]
 
-            debug(" * trying...")
-            ent = self.service().files().insert(
+        debug(" * trying...")
+        with self.service() as service:
+            ent = service.files().insert(
                 body = body,
                 media_body = ""
             ).execute()
@@ -704,9 +710,8 @@ class _Drive(object):
 
             debug(" * file created")
             return ent
-        except Exception, exc: # pragma: no cover
-            debug("Creation failed: %s" % repr(exc))
 
+        debug("Creation failed: %s" % repr(ex))
         return None
 
     def update(self,
@@ -733,8 +738,8 @@ class _Drive(object):
 
         debug("media_body type = %s" % type(media_body))
 
-        try:
-            req = self.service().files().update(
+        with self.service() as service:
+            req = service.files().update(
                 fileId = info.id,
                 body = info.dict(),
                 setModifiedDate = options.get('setModifiedDate', False),
@@ -752,8 +757,8 @@ class _Drive(object):
 
                     try:
                         status, res = req.next_chunk()
-                    except Exception, exc:
-                        debug("Exception: %s" % str(exc))
+                    except Exception, ex:
+                        debug("Exception: %s" % str(ex))
                         debug.exception()
                         break
 
@@ -770,10 +775,8 @@ class _Drive(object):
 
             return res
 
-        except Exception, exc: # pragma: no cover
-            debug("Update failed: %s" % repr(exc))
-            debug.exception()
-            raise
+        debug("Update failed")
+        raise Exception("Update failed")
     
     def _query(self, **kwargs):
         parentId = kwargs.get("parentId")
@@ -783,7 +786,6 @@ class _Drive(object):
         result = []
 
         page_token = None
-        service = self.service()
         query, ents = [], []
         param = {}
 
@@ -801,20 +803,21 @@ class _Drive(object):
         if len(query) > 0:
             param['q'] = ' and '.join(query)
 
-        while True:
-            if page_token:
-                param['pageToken'] = page_token
+        with self.service() as service:
+            while True:
+                if page_token:
+                    param['pageToken'] = page_token
 
-            debug("Executing query: %s" % repr(param))
+                debug("Executing query: %s" % repr(param))
 
-            files = service.files().list(**param).execute()
+                files = service.files().list(**param).execute()
 
-            debug("Query returned %d files" % len(files))
+                debug("Query returned %d files" % len(files))
 
-            ents.extend(files['items'])
-            page_token = files.get('nextPageToken')
+                ents.extend(files['items'])
+                page_token = files.get('nextPageToken')
 
-            if not page_token: break
+                if not page_token: break
 
         return ents
 

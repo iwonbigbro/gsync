@@ -2,7 +2,9 @@
 
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
-import sys, os, logging, re
+"""GSync - RSync for Google Drive"""
+
+import sys, os, logging
 
 try:
     import coverage
@@ -11,21 +13,36 @@ except ImportError:
     pass
 
 from libgsync.options import GsyncOptions
-from libgsync.output import verbose, debug
+from libgsync.output import verbose, debug, critical
 from libgsync.crawler import Crawler
 from libgsync.filter import Filter
 
+
+def authenticate():
+    """Performs authentications and exits"""
+
+    import libgsync.drive
+    with libgsync.drive.Drive().service():
+        verbose("Authenticated")
+        return 0
+
+    sys.stderr.write("Error: Failed to authenticate\n")
+    return 1
+
+
 def main():
+    """Main entry point for GSync"""
+
     if GsyncOptions.verbose:
         verbose.enable()
 
     if GsyncOptions.debug:
         debug.enable()
 
-    if not GsyncOptions.super and os.getuid() != 0:
-        if GsyncOptions.owner or GsyncOptions.group:
-            print("Warning: Not running as root," \
-                " file ownership may be ignored")
+    if not GsyncOptions.super and os.getuid() != 0 and \
+        (GsyncOptions.owner or GsyncOptions.group):
+
+        print("Warning: Not running as root, file ownership may be ignored")
 
     logging.basicConfig()
     paths = GsyncOptions.list().source_paths
@@ -34,18 +51,7 @@ def main():
     debug(GsyncOptions.options)
 
     if GsyncOptions.authenticate:
-        import libgsync.drive
-        try:
-            service = libgsync.drive.Drive().service()
-            if service is not None:
-                sys.stdout.write("Authenticated\n")
-                sys.exit(0)
-
-        except Exception, exc:
-            debug.exception(exc)
-
-        sys.stderr.write("Error: Failed to authenticate\n")
-        sys.exit(1)
+        return authenticate()
 
     try:
         if GsyncOptions.filter is not None:
@@ -71,39 +77,16 @@ def main():
             debug("Multiple source files, destination cannot be a file")
             GsyncOptions.force_dest_file = False
 
-        for p in paths:
-            debug("Creating crawler for: %s" % repr(p))
-            Crawler(p, dest).run()
+        for src in paths:
+            debug("Creating crawler for: %s" % repr(src))
+            Crawler(src, dest).run()
 
-    except BaseException, exc:
-        debug.exception(exc)
-        sys.stderr.write("gsync: %s\n" % str(exc))
-
-        from libgsync import __version__
-        import traceback
-
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        tb = traceback.extract_tb(exc_traceback)
-        source_file = "unknown"
-        lineno = 0
-
-        for i in xrange(len(tb) - 1, -1, -1):
-            if re.match(r'^.*/libgsync/.*$', tb[i][0]) is not None:
-                source_file = os.path.basename(tb[i][0])
-                if source_file == "__init__.py":
-                    source_file = os.path.basename(
-                        os.path.dirname(tb[i][0])
-                    )
-                lineno = tb[i][1]
-                break
-
-        sys.stderr.write("gsync error: %s at %s(%d) [client=%s]\n" % (
-            exc.__class__.__name__, source_file, lineno, __version__
-        ))
+    except BaseException, ex:
+        debug.exception(ex)
+        critical(ex)
         return 1
 
     debug("Crawlers finished, exiting")
-
     return 0
 
 

@@ -55,7 +55,7 @@ class SyncFileLocal(SyncFile):
             )
             debug("Local file = %s" % repr(info), 3)
             debug("Local mtime: %s" % repr(info.modifiedDate))
-        except OSError, exc: # pragma: no cover
+        except OSError, ex: # pragma: no cover
             debug("File not found: %s" % repr(path))
             return None
 
@@ -63,7 +63,7 @@ class SyncFileLocal(SyncFile):
 
         return info
 
-    def _updateStats(self, path, src, mode, uid, gid, mtime, atime):
+    def _update_attrs(self, path, src, mode, uid, gid, mtime, atime):
         debug("Updating local file stats: %s" % repr(path))
 
         if GsyncOptions.dry_run: return
@@ -71,13 +71,13 @@ class SyncFileLocal(SyncFile):
         if uid is not None:
             try:
                 os.chown(path, uid, -1)
-            except OSError, exc: # pragma: no cover
+            except OSError, ex: # pragma: no cover
                 pass
 
         if gid is not None:
             try:
                 os.chown(path, -1, gid)
-            except OSError, exc: # pragma: no cover
+            except OSError, ex: # pragma: no cover
                 pass
 
         if mode is not None:
@@ -105,8 +105,8 @@ class SyncFileLocal(SyncFile):
 
                 return m.hexdigest()
 
-        except Exception, exc: # pragma: no cover
-            debug.exception(exc)
+        except Exception, ex: # pragma: no cover
+            debug.exception(ex)
 
         return None
 
@@ -125,12 +125,12 @@ class SyncFileLocal(SyncFile):
         try:
             if not GsyncOptions.dry_run:
                 f = open(path, "w")
-        except Exception, exc: # pragma: no cover
-            debug("Creation failed: %s" % repr(exc))
+        except Exception, ex: # pragma: no cover
+            debug("Creation failed: %s" % repr(ex))
         finally:
             if f is not None: f.close()
 
-    def _updateFile(self, path, src):
+    def _update_data(self, path, src):
         path = self.getPath(path)
         info = self.getInfo(path)
 
@@ -175,8 +175,8 @@ class SyncFileLocal(SyncFile):
             debug("Interrupted")
             raise
 
-        except Exception, exc: # pragma: no cover
-            debug("Write failed: %s" % repr(exc))
+        except Exception, ex: # pragma: no cover
+            debug("Write failed: %s" % repr(ex))
             raise
 
         finally:

@@ -14,7 +14,7 @@ class MimeTypes(object):
         try:
             import magic
             mimeType = magic.from_file(path, mime=True)
-        except Exception, exc:
+        except Exception, ex:
             import mimetypes
             mimeType = mimetypes.guess_type(path)[0]
 

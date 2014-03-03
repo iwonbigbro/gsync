@@ -87,7 +87,7 @@ class SyncFileRemote(SyncFile):
         if info is None:
             debug("Creation failed")
 
-    def _updateFile(self, path, src):
+    def _update_data(self, path, src):
         debug("Updating remote file: %s" % repr(path))
 
         totalBytesWritten = self.bytesWritten
@@ -118,7 +118,7 @@ class SyncFileRemote(SyncFile):
         progress.complete(bytesWritten)
         self.bytesWritten = totalBytesWritten + bytesWritten
 
-    def _updateStats(self, path, src, mode, uid, gid, mtime, atime):
+    def _update_attrs(self, path, src, mode, uid, gid, mtime, atime):
         debug("Updating remote file stats: %s" % repr(path))
 
         if GsyncOptions.dry_run: return

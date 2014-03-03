@@ -58,16 +58,30 @@ class Debug(Channel):
 
         super(Debug, self)._print("DEBUG: END STACK TRACE")
 
-    def exception(self, exc = "Exception"):
-        if isinstance(exc, Exception):
+    def exception(self, ex = "Exception"):
+        if isinstance(ex, Exception):
             super(Debug, self)._print("DEBUG: %s: %s" % (
-                repr(exc), str(exc)
+                repr(ex), str(ex)
             ), -1)
 
         import traceback
         super(Debug, self)._print("DEBUG: %s: %s" % (
-            repr(exc), "".join(traceback.format_tb(sys.exc_info()[2]))
+            repr(ex), "".join(traceback.format_tb(sys.exc_info()[2]))
         ), -1)
+
+    def function(self, func):
+        """Provides function decoration debugging"""
+        if self._priority < 1:
+            return func
+
+        def __function(*args, **kwargs):
+            ret = func(*args, **kwargs)
+            self._print("%s(%s, %s) = %s" % (
+                func.__name__, repr(args), repr(kwargs), repr(ret)
+            ))
+            return ret
+
+        return __func_result
 
 
 class Verbose(Channel):
@@ -140,9 +154,37 @@ class Progress(object):
             self._print()
             sys.stdout.write("\n")
 
+
+class Critical(object):
+    def __call__(self, ex):
+        sys.stderr.write("gsync: %s\n" % str(ex))
+
+        from libgsync import __version__
+        import traceback, re
+
+        tb = traceback.extract_tb((sys.exc_info())[-1])
+        source_file = "unknown"
+        lineno = 0
+
+        for i in xrange(len(tb) - 1, -1, -1):
+            if re.match(r'^.*/libgsync/.*$', tb[i][0]) is not None:
+                source_file = os.path.basename(tb[i][0])
+                if source_file == "__init__.py":
+                    source_file = os.path.basename(
+                        os.path.dirname(tb[i][0])
+                    )
+                lineno = tb[i][1]
+                break
+
+        sys.stderr.write("gsync error: %s at %s(%d) [client=%s]\n" % (
+            ex.__class__.__name__, source_file, lineno, __version__
+        ))
+
+
 verbose = Verbose()
 debug = Debug()
 itemize = Itemize()
+critical = Critical()
 
 if os.environ.get('GSYNC_DEBUG', '0') == '1':
     debug.enable()

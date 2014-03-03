@@ -1,12 +1,13 @@
 # Copyright (C) 2013 Craig Phillips.  All rights reserved.
 
-class EBindNoContext(Exception):
-    pass
+"""Module for providing a function paramater binding closure"""
 
-class EBindNoFunc(Exception):
+class BindNoFuncError(Exception):
     pass
 
 class bind(object):
+    """Binds a function to a set of arguments and a defined context"""
+
     def __init__(self, func, context, *args):
         self.__f = func
         self.__c = context
@@ -20,7 +21,7 @@ class bind(object):
             func = context.__class__.__dict__.get(func, None)
 
         if not callable(func):
-            raise EBindNoFunc
+            raise BindNoFuncError
 
         if context:
             return func(context, *xargs)

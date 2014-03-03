@@ -48,7 +48,7 @@ class SyncFileInfoDatetime(object):
     def __getattr__(self, name):
         try:
             return self.__dict__[name]
-        except Exception, exc:
+        except Exception, ex:
             return getattr(self.__d, name)
 
     def __repr__(self): return "SyncFileInfoDatetime(%s)" % repr(self.__d)
@@ -152,8 +152,8 @@ class SyncFileInfo(object):
                     pickle.loads(decompress(b64decode(value)))
                 self._dict['description'] = value
                 return
-            except Exception, exc:
-                debug("Base 64 decode failed: %s" % repr(exc))
+            except Exception, ex:
+                debug("Base 64 decode failed: %s" % repr(ex))
                 pass
 
             # That failed, try to decode using old hex encoding.
@@ -161,8 +161,8 @@ class SyncFileInfo(object):
                 self._dict['statInfo'] = pickle.loads(value.decode("hex"))
                 self._dict['description'] = value
                 return
-            except Exception, exc:
-                debug("Hex decode failed: %s" % repr(exc))
+            except Exception, ex:
+                debug("Hex decode failed: %s" % repr(ex))
                 pass
 
             debug("Failed to decode string: %s" % repr(value))
@@ -203,36 +203,34 @@ class SyncFile(object):
     def _createDir(self, path, src = None): # pragma: no cover
         raise NotImplementedError
 
-    def _updateDir(self, path, src): # pragma: no cover
+    def _update_dir(self, path, src): # pragma: no cover
         raise NotImplementedError
 
     def _createFile(self, path, src): # pragma: no cover
         raise NotImplementedError
 
-    def _updateFile(self, path, src): # pragma: no cover
+    def _update_data(self, path, src): # pragma: no cover
         raise NotImplementedError
 
-    def _updateStats(self, path, src, mode, uid, gid, mtime, atime): # pragma: no cover
+    def _update_attrs(self, path, src, mode, uid, gid, mtime, atime): # pragma: no cover
         raise NotImplementedError
 
     def __createFile(self, path, src = None):
         self._createFile(path, src)
-        self._updateFile(path, src)
-        self.__updateStats(path, src)
+        self._update_data(path, src)
+        self.__update_attrs(path, src)
 
     def __createDir(self, path, src = None):
         self._createDir(path, src)
-        self.__updateStats(path, src)
+        self.__update_attrs(path, src)
 
-    def __updateFile(self, path, src):
-        self._updateFile(path, src)
-        self.__updateStats(path, src)
+    def __update_data(self, path, src):
+        self._update_data(path, src)
 
-    def __updateDir(self, path, src):
-        self._updateDir(path, src)
-        self.__updateStats(path, src)
+    def __update_dir(self, path, src):
+        self._update_dir(path, src)
 
-    def __updateStats(self, path, src):
+    def __update_attrs(self, path, src):
         if src is None: return
 
         srcInfo = src.getInfo()
@@ -271,7 +269,7 @@ class SyncFile(object):
         debug(" * Updating with mtime: %0.2f" % mtime)
         debug(" * Updating with atime: %0.2f" % atime)
 
-        self._updateStats(path, src, mode, uid, gid, mtime, atime)
+        self._update_attrs(path, src, mode, uid, gid, mtime, atime)
 
 
     def _normaliseSource(self, src):
@@ -316,14 +314,19 @@ class SyncFile(object):
 
         self.__createFile(path, srcObj)
 
-    def update(self, path, src):
+    def update_data(self, path, src):
         (srcPath, srcInfo, srcObj) = self._normaliseSource(src)
 
         if srcInfo is None or srcInfo.mimeType == MimeTypes.FOLDER:
-            self.__updateDir(path, srcObj)
+            self.__update_dir(path, srcObj)
             return
 
-        self.__updateFile(path, srcObj)
+        self.__update_data(path, srcObj)
+
+    def update_attrs(self, path, src):
+        (srcPath, srcInfo, srcObj) = self._normaliseSource(src)
+
+        self.__update_attrs(path, srcObj)
 
     def normpath(self, path):
         return os.path.normpath(path)

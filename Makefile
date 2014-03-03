@@ -71,7 +71,7 @@ ctags: $(SRC_FILES)
 	@rm -f $@
 	@ctags -R -f $@ bin/ libgsync/
 
-install: check /usr/local/bin/gsync
+install: /usr/local/bin/gsync
 
 bdist build: setup.py $(SRC_FILES)
 	@./setup.py $@

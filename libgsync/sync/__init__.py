@@ -1,4 +1,8 @@
-# Copyright (C) 2013 Craig Phillips.  All rights reserved.
+#!/usr/bin/env python
+
+# Copyright (C) 2013-2014 Craig Phillips.  All rights reserved.
+
+"""Provides an Adapter for local and remote sync file types"""
 
 import os, datetime, time, re
 from libgsync.output import verbose, debug, itemize
@@ -6,14 +10,242 @@ from libgsync.drive.mimetypes import MimeTypes
 from libgsync.options import GsyncOptions
 from libgsync.sync.file.factory import SyncFileFactory
 
-class ESyncFileAbstractMethod(Exception):
-    pass
+
+NOCHANGE = 0x0000
+CREATE = 0x0001
+UPDATE_DATA = 0x0002
+UPDATE_ATTRS = 0x0004
+
+
+class SyncRules(object):
+    """Used as an intermediate object for calculating file differences"""
+
+    def __init__(self, src_file, dst_file, is_local=False):
+        self.src_file = src_file
+        self.dst_file = dst_file
+        self.is_local = is_local
+        self.changes = bytearray("           ")
+        self.action = NOCHANGE
+
+        if GsyncOptions.force_dest_file:
+            self.is_dir = False
+        else:
+            self.is_dir = bool(src_file.mimeType == MimeTypes.FOLDER)
+
+    @debug.function
+    def skip_non_existing(self):
+        """Skip creating new files on receiver if they don't already exist"""
+
+        if not (GsyncOptions.existing and GsyncOptions.ignore_non_existing):
+            return False
+
+        return bool(self.dst_file is None)
+
+    @debug.function
+    def skip_existing(self):
+        """Skip updating files on receiver if they already exist"""
+
+        if not GsyncOptions.ignore_existing:
+            return False
+
+        return bool(self.dst_file is not None)
+
+    @debug.function
+    def skip_mimetype(self):
+        """Something not provided by rsync.  Skips files if their mimetype is
+        the same.  Useful for determining when they are not the same.
+        """
+
+        return self.src_file.mimeType == self.dst_file.mimeType
+    
+    @debug.function
+    def skip_quickcheck(self):
+        """Skip files based on files that are the same size and mtime"""
+
+        if GsyncOptions.checksum:
+            return False
+
+        if GsyncOptions.ignore_times:
+            return False
+
+        if not self.skip_mimetype():
+            return False
+
+        return bool(
+            (GsyncOptions.size_only or self.skip_mtime()) and \
+            self.skip_size()
+        )
+
+    @debug.function
+    def skip_mtime(self):
+        """Skip files that share the same modification time"""
+
+        return self.src_file.modifiedDate == self.dst_file.modifiedDate
+
+    @debug.function
+    def skip_newer(self):
+        """Skip files that are newer on the receiver"""
+
+        if not GsyncOptions.update:
+            return False
+
+        return self.src_file.modifiedDate <= self.dst_file.modifiedDate
+
+    @debug.function
+    def skip_size(self):
+        """Skip files that match in size"""
+
+        if self.src_file.fileSize != self.dst_file.fileSize:
+            self.changes[3] = 's'
+            return False
+
+        self.changes[3] = '.'
+        return True
+
+    @debug.function
+    def skip_checksum(self):
+        """Skip files based on checksum, not mod-time & size"""
+
+        if not GsyncOptions.checksum:
+            return False
+
+        if self.src_file.md5Checksum != self.dst_file.md5Checksum:
+            self.changes[2] = 'c'
+            return False
+
+        self.changes[2] = '.'
+        return True
+
+    @debug.function
+    def skip_append(self):
+        """Skip files if appending is not possible due to destination being
+        of equal or longer in length.
+        """
+
+        if not GsyncOptions.append:
+            return False
+
+        return self.src_file.fileSize >= self.dst_file.fileSize
+
+    @debug.function
+    def skip_dirs(self):
+        """Skip directories if user is using no-dirs or is not using one of
+        recursive or dirs modes.
+        """
+
+        if not self.is_dir:
+            return False
+
+        if GsyncOptions.recursive:
+            return False
+
+        if GsyncOptions.no_dirs:
+            return True
+
+        if GsyncOptions.files_from or GsyncOptions.list_only:
+            return False
+
+        return GsyncOptions.dirs
+
+    def _apply_skip_create(self):
+        """Apply the skips that apply only to file creation"""
+
+        if self.skip_non_existing():
+            return True
+
+        if self.skip_existing():
+            return True
+
+        if self.dst_file is None:
+            self.changes = bytearray("cf+++++++++")
+            self.action |= CREATE
+
+            if self.is_dir:
+                self.changes[1] = 'd'
+
+            return True
+
+        return False
+
+    def _apply_update_attrs(self):
+        """Apply update attribute changes"""
+
+        # First check what file attributes we should update, if any.
+        if not self.skip_mtime():
+            self.action |= UPDATE_ATTRS
+
+            if GsyncOptions.times:
+                self.changes[4] = 't'
+            else:
+                self.changes[4] = 'T'
+
+        src_st, dst_st = self.src_file.statInfo, self.dst_file.statInfo
+
+        if src_st and dst_st:
+            if GsyncOptions.perms and dst_st.st_mode != src_st.st_mode:
+                self.action |= UPDATE_ATTRS
+                self.changes[5] = 'p'
+
+            if GsyncOptions.owner and dst_st.st_uid != src_st.st_uid:
+                self.action |= UPDATE_ATTRS
+                self.changes[6] = 'o'
+            
+            if GsyncOptions.group and dst_st.st_gid != src_st.st_gid:
+                self.action |= UPDATE_ATTRS
+                self.changes[7] = 'g'
+
+            # Rsync also provides support for these:
+            #     Check acl = self.changes[9] = 'a'
+            #     Check extended attributes = self.changes[10] = 'x'
+
+    def _apply_skip_update(self):
+        """Apply skips that are only applicable to data updates"""
+
+        if self.skip_newer() or self.skip_quickcheck():
+            return True
+
+        if self.skip_checksum() or self.skip_append():
+            return True
+
+        if self.skip_size() or self.skip_dirs():
+            return True
+
+        return False
+
+    def apply(self):
+        """Performs the appropriate comparison operations on the files to
+        determine what action should be taken.  Returns a tuple containing
+        the action bitmask and change byte array.
+
+        @return ( {bitmask} action, {bytearray} changes )
+        """
+
+        self.action = NOCHANGE
+
+        if not self._apply_skip_create():
+            self.changes = bytearray("...........")
+
+            self._apply_update_attrs()
+
+            if not self._apply_skip_update():
+                self.action |= UPDATE_DATA
+
+        if self.action & ( CREATE | UPDATE_DATA ):
+            if self.is_local:
+                self.changes[0] = '>'
+            else:
+                self.changes[0] = '<'
+
+        return self.action, self.changes
+
 
 class Sync(object):
+    """The GSync Synchronisation Adapter Class"""
+
     src = None
     dst = None
-    totalBytesSent = 0L
-    totalBytesReceived = 0L
+    total_bytes_sent = 0L
+    total_bytes_received = 0L
     started = None
 
     def __init__(self, src, dst):
@@ -25,179 +257,72 @@ class Sync(object):
         self._sync(path)
 
     def _sync(self, path):
+        """Internal synchronisation method, accessible by calling the class
+        instance and providing the path to the file to synchronise.
+
+        @param {String} path   The path to the file to synchronise.
+        """
+
         debug("Synchronising: %s" % repr(path))
 
-        relPath = self.src.relativeTo(path)
+        rel_path = self.src.relativeTo(path)
         debug("Destination: %s" % repr(self.dst))
-        debug("Relative: %s" % repr(relPath))
+        debug("Relative: %s" % repr(rel_path))
 
-        srcFile = self.src.getInfo(relPath)
-        if srcFile is None:
+        src_file = self.src.getInfo(rel_path)
+        if src_file is None:
             debug("File not found: %s" % repr(path))
             return None
 
-        folder = bool(srcFile.mimeType == MimeTypes.FOLDER)
-        dstPath = None
-        dstFile = None
-        create = False
-        update = False
+        dst_path, dst_file = None, None
 
-        force_dest_file = GsyncOptions.force_dest_file
-        debug("force_dest_file = %s" % force_dest_file)
+        debug("force_dest_file = %s" % GsyncOptions.force_dest_file)
 
-        # If GsyncOptions.force_dest_file is None, the following are ignored.
-        if force_dest_file:
-            folder = False
-            dstFile = self.dst.getInfo()
-            dstPath = self.dst + ""
-            relPath = os.path.basename(dstPath)
-            debug("Forcing destination file: %s" % repr(dstPath))
+        if GsyncOptions.force_dest_file:
+            dst_file = self.dst.getInfo()
+            dst_path = self.dst + ""
+            rel_path = os.path.basename(dst_path)
         else:
-            dstPath = self.dst + relPath
-            dstFile = self.dst.getInfo(relPath)
-            debug("Defaulting destination directory: %s" % repr(dstPath))
+            dst_path = self.dst + rel_path
+            dst_file = self.dst.getInfo(rel_path)
 
-        debug("srcFile = %s" % repr(srcFile), 3)
-        debug("dstFile = %s" % repr(dstFile), 3)
+        debug("src_file = %s" % repr(src_file), 3)
+        debug("dst_file = %s" % repr(dst_file), 3)
 
-        if dstFile is None:
-            debug("File not found: %s" % repr(dstPath))
-        elif dstFile.mimeType != srcFile.mimeType:
-            debug("Destination mimetype(%s) != source mimetype(%s)" % (
-                dstFile.mimeType, srcFile.mimeType
-            ))
+        rules = SyncRules(src_file, dst_file, is_local=self.dst.islocal())
+        action, changes = rules.apply()
 
-        if dstFile is None or dstFile.mimeType != srcFile.mimeType:
-            changes = bytearray("+++++++++++")
-            create = True
-        else:
-            changes = bytearray("...........")
+        if not action & (CREATE | UPDATE_DATA | UPDATE_ATTRS):
+            debug("File up to date: %s" % repr(dst_path))
+            return None
 
-            if GsyncOptions.update:
-                if srcFile.modifiedDate <= dstFile.modifiedDate:
-                    debug("File up to date: %s" % repr(path))
-                    return None
-
-            if srcFile.fileSize != dstFile.fileSize:
-                if folder:
-                    debug("Folder size differs, so what...?: %s" % repr(path))
-                    return None
-
-                debug("File size mismatch: %s" % repr(path))
-                debug("    source size:      %d" % srcFile.fileSize)
-                debug("    destination size: %d" % dstFile.fileSize)
-
-                if GsyncOptions.append:
-                    update = True
-                else:
-                    create = True
-
-                changes[3] = 's'
-
-            elif GsyncOptions.checksum:
-                if srcFile.md5Checksum != dstFile.md5Checksum:
-                    debug("File checksum mismatch: %s" % repr(path))
-                    debug("    source md5:      %s" % srcFile.md5Checksum)
-                    debug("    destination md5: %s" % dstFile.md5Checksum)
-
-                    changes[2] = 'c'
-                    update = True
-
-            if srcFile.modifiedDate >= dstFile.modifiedDate:
-                if folder and not GsyncOptions.times:
-                    debug("Don't update folders unless --times: %s" % 
-                        repr(path))
-                    return None
-
-                if srcFile.modifiedDate > dstFile.modifiedDate:
-                    debug("File timestamp mismatch: %s" % repr(path))
-                    debug(" * source mtime:      %d" %
-                        int(srcFile.modifiedDate))
-                    debug(" * destination mtime: %d" %
-                        int(dstFile.modifiedDate))
-                    debug(" * delta:             %s" %
-                        repr(srcFile.modifiedDate - dstFile.modifiedDate))
-
-                    if GsyncOptions.times:
-                        changes[4] = 't'
-                    else:
-                        changes[4] = 'T'
-
-                    update = True
-
-            elif GsyncOptions.update:
-                debug("Skipping, dest file is newer: %s" % repr(dstPath))
-                return None
-
-            if update or create:
-                if srcFile.statInfo and dstFile.statInfo:
-                    dstSt = dstFile.statInfo
-                    srcSt = srcFile.statInfo
-
-                    if GsyncOptions.perms and dstSt.st_mode != srcSt.st_mode:
-                        changes[5] = 'p'
-
-                    if GsyncOptions.owner and dstSt.st_uid != srcSt.st_uid:
-                        changes[6] = 'o'
-                    
-                    if GsyncOptions.group and dstSt.st_gid != srcSt.st_gid:
-                        changes[7] = 'g'
-
-                if srcFile.modifiedDate != dstFile.modifiedDate:
-                    if GsyncOptions.times:
-                        changes[4] = 't'
-                    else:
-                        changes[4] = 'T'
-
-            # TODO: Check acl = changes[9] = 'a'
-            # TODO: Check extended attributes = changes[10] = 'x'
-
-            if not update and not create:
-                debug("File up to date: %s" % repr(dstPath))
-                return None
-
-        if folder:
-            if create:
-                changes[0] = 'c'
-
-            changes[1] = 'd'
-            relPath += "/"
-        else:
-            changes[1] = 'f'
-
-            if update or create:
-                if self.dst.islocal():
-                    changes[0] = '>'
-                else:
-                    changes[0] = '<'
+        if rules.is_dir:
+            rel_path += "/"
 
         if GsyncOptions.itemize_changes:
-            itemize(changes, relPath)
+            itemize(changes, rel_path)
         else:
-            verbose(relPath)
+            verbose(rel_path)
 
         try:
-            if create:
-                self.dst.create(dstPath, srcFile)
+            if action & CREATE:
+                self.dst.create(dst_path, src_file)
 
-            elif GsyncOptions.ignore_existing:
-                debug("File exists on the receiver, skipping: %s" % (
-                    repr(path)
-                ))
-                return None
+            elif action & UPDATE_DATA:
+                self.dst.update_data(dst_path, src_file)
 
-            elif update:
-                self.dst.update(dstPath, srcFile)
+            if action & UPDATE_ATTRS:
+                self.dst.update_attrs(dst_path, src_file)
 
-        except KeyboardInterrupt, exc:
-            debug("Interrupted")
-            raise
         finally:
-            self.totalBytesSent += self.dst.bytesWritten
-            self.totalBytesReceived += self.dst.bytesRead
+            self.total_bytes_sent += self.dst.bytesWritten
+            self.total_bytes_received += self.dst.bytesRead
 
     def rate(self):
+        """Returns the data transfer rate of the synchronisation"""
+
         delta = float(time.time()) - float(self.started)
-        totalBytes = float(self.totalBytesSent) + \
-            float(self.totalBytesReceived)
-        return float(totalBytes) / float(delta)
+        total_bytes = float(self.total_bytes_sent) + \
+            float(self.total_bytes_received)
+
+        return float(total_bytes) / float(delta)
