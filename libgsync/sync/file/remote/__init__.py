@@ -6,6 +6,7 @@
 
 import os, re, datetime
 from libgsync.output import verbose, debug, itemize, Progress
+from libgsync.sync import SyncType
 from libgsync.sync.file import SyncFile, SyncFileInfo
 from libgsync.options import GsyncOptions
 from apiclient.http import MediaIoBaseUpload, MediaUploadProgress
@@ -22,11 +23,15 @@ class SyncFileRemote(SyncFile):
     def __repr__(self):
         return "SyncFileRemote(%s)" % repr(self._path)
 
+    def sync_type(self):
+        return SyncType.REMOTE
+
     def normpath(self, path):
         return Drive().normpath(path)
 
     def strippath(self, path):
         """Strips path of the 'drive://' prefix using the Drive() method"""
+
         return Drive().strippath(path)
 
     def get_path(self, path = None):

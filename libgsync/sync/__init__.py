@@ -17,13 +17,18 @@ UPDATE_DATA = 0x0002
 UPDATE_ATTRS = 0x0004
 
 
+class SyncType():
+    LOCAL = '<'
+    REMOTE = '>'
+
+
 class SyncRules(object):
     """Used as an intermediate object for calculating file differences"""
 
-    def __init__(self, src_file, dst_file, is_local=False):
+    def __init__(self, src_file, dst_file, sync_type=SyncType.LOCAL):
         self.src_file = src_file
         self.dst_file = dst_file
-        self.is_local = is_local
+        self.sync_type = sync_type
         self.changes = bytearray("           ")
         self.action = NOCHANGE
 
@@ -231,10 +236,7 @@ class SyncRules(object):
                 self.action |= UPDATE_DATA
 
         if self.action & ( CREATE | UPDATE_DATA ):
-            if self.is_local:
-                self.changes[0] = '>'
-            else:
-                self.changes[0] = '<'
+            self.changes[0] = self.sync_type
 
         return self.action, self.changes
 
@@ -289,7 +291,7 @@ class Sync(object):
         debug("src_file = %s" % repr(src_file), 3)
         debug("dst_file = %s" % repr(dst_file), 3)
 
-        rules = SyncRules(src_file, dst_file, is_local=self.dst.islocal())
+        rules = SyncRules(src_file, dst_file, sync_type=self.dst.sync_type())
         action, changes = rules.apply()
 
         if not action & (CREATE | UPDATE_DATA | UPDATE_ATTRS):

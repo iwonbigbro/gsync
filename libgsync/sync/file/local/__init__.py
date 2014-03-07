@@ -1,13 +1,24 @@
-# Copyright (C) 2013 Craig Phillips.  All rights reserved.
+#!/usr/bin/env python
+
+# Copyright (C) 2013-2014 Craig Phillips.  All rights reserved.
+
+"""Local version of the SyncFile type for handling local file access"""
 
 import os, datetime
 from libgsync.output import verbose, debug, itemize, Progress
 from libgsync.drive.mimetypes import MimeTypes
+from libgsync.sync import SyncType
 from libgsync.sync.file import SyncFile, SyncFileInfo
 from libgsync.options import GsyncOptions
 from apiclient.http import MediaFileUpload, MediaUploadProgress
 
+
 class SyncFileLocal(SyncFile):
+    """SyncFileLocal class for representing local files"""
+
+    def sync_type(self):
+        return SyncType.LOCAL
+
     def get_uploader(self, path = None):
         info = self.get_info(path)
         if info is None: # pragma: no cover
