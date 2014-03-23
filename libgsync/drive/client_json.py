@@ -1,4 +1,10 @@
-# Copyright (C) 2013 Craig Phillips.  All rights reserved.
+#!/usr/bin/env python
+
+# Copyright (C) 2013-2014 Craig Phillips.  All rights reserved.
+
+"""Defines the client object to be used during authentication"""
+
+# pylint: disable-msg=C0103
 
 client_obj = {
     "installed": {

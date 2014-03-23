@@ -126,7 +126,10 @@ class SyncFileRemote(SyncFile):
             progress.bytesTotal = info.fileSize
 
             drive = Drive()
-            info = drive.update(path, info, src.get_uploader(), progress)
+            info = drive.update(
+                path, info, media_body=src.get_uploader(),
+                progress_callback=progress
+            )
 
             if info is not None:
                 bytes_written = long(info.get('fileSize', '0'))

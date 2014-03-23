@@ -44,9 +44,9 @@ class SyncFileLocal(SyncFile):
             filename = os.path.basename(path)
 
             if os.path.isdir(path):
-                mime_type = MimeTypes.FOLDER
+                mimetype = MimeTypes.FOLDER
             else:
-                mime_type = MimeTypes.get(path)
+                mimetype = MimeTypes.get(path)
 
             md5_checksum = None
             if GsyncOptions.checksum:
@@ -58,7 +58,7 @@ class SyncFileLocal(SyncFile):
                 datetime.datetime.utcfromtimestamp(
                     st_info.st_mtime
                 ).isoformat(),
-                mimeType = mime_type,
+                mimeType = mimetype,
                 description = st_info,
                 fileSize = st_info.st_size,
                 md5Checksum = md5_checksum,
