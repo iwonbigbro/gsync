@@ -1,25 +1,20 @@
-# Copyright (C) 2013 Craig Phillips.  All rights reserved.
+#!/usr/bin/env python
 
-class DriveFile(object):
-    def __init__(self, **kwargs):
-        self.__dict__['_dict'] = dict(kwargs.items())
+# Copyright (C) 2013-2013 Craig Phillips.  All rights reserved.
 
-    def keys(self): return self._dict.keys()
-    def values(self): return self._dict.values()
-    def items(self): return self._dict.items()
-    def iteritems(self): return self._dict.iteritems()
-    def dict(self): return dict(self.items())
+"""Drive file objects"""
 
-    def __setattr__(self, key, value):
-        self._dict[key] = value
+class DriveFile(dict):
+    """
+    Defines the DriveFile adapter that provides an interface to a
+    drive file information dictionary.
+    """
+    __setattr__ = dict.__setitem__
+
 
     def __getattr__(self, key):
-        return self._dict.get(key)
+        return self.get(key)
 
-    def __getitem__(self, key):
-        return self._dict[key]
 
     def __repr__(self):
-        return "DriveFile(**{ %s })" % ", ".join([
-            "%s: %s" % (repr(k), repr(v)) for k, v in self._dict.iteritems()
-        ])
+        return "DriveFile(%s)" % self.items()

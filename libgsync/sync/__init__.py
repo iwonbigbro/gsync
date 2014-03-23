@@ -5,6 +5,7 @@
 """Provides an Adapter for local and remote sync file types"""
 
 import os, datetime, time, re
+from libgsync.enum import Enum
 from libgsync.output import verbose, debug, itemize
 from libgsync.drive.mimetypes import MimeTypes
 from libgsync.options import GsyncOptions
@@ -17,7 +18,9 @@ UPDATE_DATA = 0x0002
 UPDATE_ATTRS = 0x0004
 
 
-class SyncType():
+class SyncType(Enum):
+    """SyncType enum"""
+
     LOCAL = '<'
     REMOTE = '>'
 
@@ -267,7 +270,7 @@ class Sync(object):
 
         debug("Synchronising: %s" % repr(path))
 
-        rel_path = self.src.relativeTo(path)
+        rel_path = self.src.relative_to(path)
         debug("Destination: %s" % repr(self.dst))
         debug("Relative: %s" % repr(rel_path))
 
@@ -317,8 +320,8 @@ class Sync(object):
                 self.dst.update_attrs(dst_path, src_file)
 
         finally:
-            self.total_bytes_sent += self.dst.bytesWritten
-            self.total_bytes_received += self.dst.bytesRead
+            self.total_bytes_sent += self.dst.bytes_written
+            self.total_bytes_received += self.dst.bytes_read
 
     def rate(self):
         """Returns the data transfer rate of the synchronisation"""
