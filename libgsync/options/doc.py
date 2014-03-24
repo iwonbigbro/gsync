@@ -95,7 +95,7 @@ Options:
      --compare-dest=DIR      also compare destination files relative to DIR
      --copy-dest=DIR         ... and include copies of unchanged files
  -C, --cvs-exclude           auto-ignore files the same way CVS does
- -f, --filter=RULE           add a file-filtering RULE
+ -fd, --filter=RULE           add a file-filtering RULE
  -F                          same as --filter='dir-merge /.rsync-filter'
                              repeated: --filter='- .rsync-filter'
      --exclude=PATTERN       exclude files matching PATTERN

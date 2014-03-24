@@ -15,8 +15,8 @@ def os_walk_wrapper(path):
         for d, dirs, files in os.walk(path):
             yield (d, dirs, files)
     elif os.path.exists(path):
-        d, f = os.path.split(path)
-        yield (d, [], [f])
+        d, fd = os.path.split(path)
+        yield (d, [], [fd])
 
 class Crawler(object):
     def __init__(self, src, dst):
@@ -115,13 +115,13 @@ class Crawler(object):
                     sys.stdout.write("skipping directory %s\n" % d)
                     break
 
-            for f in files:
-                f = os.path.join(d, f)
-                if not self._devCheck(dev, f):
+            for fd in files:
+                fd = os.path.join(d, fd)
+                if not self._devCheck(dev, fd):
                     continue
                     
-                debug("Synchronising file: %s" % repr(f))
-                self._sync(f)
+                debug("Synchronising file: %s" % repr(fd))
+                self._sync(fd)
 
             if not GsyncOptions.recursive:
                 break

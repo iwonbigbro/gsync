@@ -79,7 +79,7 @@ class SyncFileInfoDatetime(object):
         return "SyncFileInfoDatetime(%s)" % repr(self.__value)
 
     def __str__(self):
-        return self.__value.strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
+        return self.__value.strftime("%Y-%m-%dT%H:%M:%S.%fd+00:00")
 
     def __secs(self):
         return (self.__value - self.__epoch).total_seconds()
