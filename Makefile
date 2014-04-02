@@ -21,8 +21,17 @@ reverse = $(if $(1),$(call reverse,\
 reverse = $(shell printf "%s\n" $(strip $1) | tac)
 
 SRC_FILES:= $(shell find bin/ libgsync/ -type f)
-PYLINT_TARGETS:= $(if $(shell which pylint),$(addprefix pylint/,$(SRC_FILES)),)
-.PHONY: $(PYLINT_TARGETS)
+TEST_FILES:= $(shell find tests/ -type f -name "*.py")
+
+PYLINT:= $(shell which pylint)
+ifneq (,$(PYLINT))
+PYLINT_TARGETS:= $(addprefix pylint/,$(SRC_FILES))
+PYLINT_TEST_TARGETS:= $(addprefix pylint/,$(TEST_FILES))
+else
+PYLINT_TARGETS:=
+PYLINT_TEST_TARGETS:=
+endif
+.PHONY: $(PYLINT_TARGETS) $(PYLINT_TEST_TARGETS)
 
 MANIFEST:= $(if $(wildcard MANIFEST),$(shell cat MANIFEST),)
 RM_MANIFEST:= $(addprefix uninstall_,\
@@ -57,12 +66,18 @@ clean:
 	@find . -name \*.pyc -delete
 
 check: $(PYLINT_TARGETS)
+check_unittests: $(PYLINT_TEST_TARGETS)
 
 .pylintrc:
 	@pylint --generate-rcfile >$@
 
 $(PYLINT_TARGETS): pylint/% : % | .pylintrc
+	@echo Checking $<
 	@pylint -r n --rcfile .pylintrc $<
+
+$(PYLINT_TEST_TARGETS): pylint/% : % | .pylintrc
+	@echo Checking $<
+	@pylint -E -r n --rcfile .pylintrc $<
 
 uninstall: $(RM_MANIFEST)
 	@echo "Uninstall complete"
