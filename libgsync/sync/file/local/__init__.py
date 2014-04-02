@@ -55,6 +55,7 @@ class SyncFileLocal(SyncFile):
                 md5_checksum = self._md5_checksum(path)
 
             info = SyncFileInfo(
+                id=None,
                 title=filename,
                 modifiedDate=datetime.datetime.utcfromtimestamp(
                     st_info.st_mtime
