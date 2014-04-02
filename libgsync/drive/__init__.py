@@ -11,8 +11,8 @@ from contextlib import contextmanager
 
 try:
     import simplejson as json
-except ImportError:
-    import json # pragma: no cover
+except ImportError: # pragma: no cover
+    import json
 
 import oauth2client.util
 oauth2client.util.positional_parameters_enforcement = \
@@ -45,7 +45,7 @@ class FileNotFoundError(Exception): # pragma: no cover
 
         self.filename = filename
 
-class NoServiceError(Exception):
+class NoServiceError(Exception): # pragma: no cover
     """Raised when a service could not be obtained from apiclient"""
     pass
 
