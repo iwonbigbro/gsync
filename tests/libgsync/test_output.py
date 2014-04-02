@@ -3,7 +3,7 @@
 # Copyright (C) 2014 Craig Phillips.  All rights reserved.
 
 import unittest, StringIO, sys
-from libgsync.output import Channel, Debug, Itemize, Progress
+from libgsync.output import Channel, Debug, Itemize, Progress, Critical
 
 class TestCaseStdStringIO(unittest.TestCase):
     def setUp(self):
@@ -39,6 +39,26 @@ class TestChannel(TestCaseStdStringIO):
         self.assertEqual("", sys.stderr.getvalue())
 
 
+class TestCritical(TestCaseStdStringIO):
+    def test_call(self):
+        channel = Critical()
+
+        try:
+            raise Exception("CriticalException")
+        except Exception, ex:
+            channel(ex)
+
+        import re
+        pat = re.compile(
+            r'^gsync: CriticalException\n' \
+            r'gsync error: Exception at .*\(\d+\) \[client=[\d.]+\]\n$',
+            re.M | re.S
+        )
+
+        self.assertIsNotNone(pat.search(sys.stderr.getvalue()))
+        self.assertEqual("", sys.stdout.getvalue())
+
+
 class TestDebug(TestCaseStdStringIO):
     def test_stack(self):
         channel = Debug()
@@ -49,7 +69,9 @@ class TestDebug(TestCaseStdStringIO):
 
         import re
         pat = re.compile(
-            r'^DEBUG: BEGIN STACK TRACE\n.*\nDEBUG: END STACK TRACE\n$',
+            r'^DEBUG: BEGIN STACK TRACE\n' \
+            r'.*\n' \
+            r'DEBUG: END STACK TRACE\n$',
             re.M | re.S
         )
         self.assertIsNotNone(pat.search(sys.stdout.getvalue()))

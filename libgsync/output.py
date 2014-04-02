@@ -243,5 +243,5 @@ critical = Critical() # pylint: disable-msg=C0103
 
 __all__ = [ "verbose", "debug", "itemize", "critical" ]
 
-if os.environ.get('GSYNC_DEBUG', '0') == '1':
+if os.environ.get('GSYNC_DEBUG', '0') == '1': # pragma: no cover
     debug.enable()
