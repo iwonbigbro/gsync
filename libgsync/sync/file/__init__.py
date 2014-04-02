@@ -400,7 +400,7 @@ class SyncFile(object):
 
             if isinstance(src, SyncFileInfo):
                 src_info = src
-                src_obj = SyncFileFactory.create(src_info.get_path())
+                src_obj = SyncFileFactory.create(src_info.path)
                 src_path = src_obj.get_path()
 
             elif isinstance(src, SyncFile):

@@ -122,7 +122,7 @@ class GsyncOptionsType(GsyncListOptionsType):
         return GsyncListOptions
 
     def __getattr__(cls, name):
-        return GsyncListOptionsType.__getattr__(cls, name)[-1]
+        return getattr(GsyncListOptions, name)[-1]
 
 
 class GsyncOptions(object):

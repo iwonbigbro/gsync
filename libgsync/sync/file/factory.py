@@ -10,7 +10,8 @@ from libgsync.output import debug
 from libgsync.drive import Drive
 
 class SyncFileFactory(object):
-    """SyncFileFactory class creates either a remote or local SyncFile
+    """
+    SyncFileFactory class creates either a remote or local SyncFile
     instance to be used with the SyncFile adapter.  Remote files are those
     that exist in the Google Drive space, while local files exist on the
     local system.  Both file classes share the same common interface.
