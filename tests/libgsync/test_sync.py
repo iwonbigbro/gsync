@@ -2,16 +2,17 @@
 
 # Copyright (C) 2014 Craig Phillips.  All rights reserved.
 
-import unittest, tempfile, sys, os, shutil, hashlib
+import unittest, tempfile, sys, os, shutil
 import libgsync.options
 import libgsync.sync
+import libgsync.hashlib as hashlib
 
 try: import posix as os_platform
 except ImportError: import nt as os_platform
 
 def sha256sum(path):
     blocksize = 65536
-    sha = hashlib.md5()
+    sha = hashlib.new("sha256")
     with open(path, "r+b") as f:
         for block in iter(lambda: f.read(blocksize), ""):
             sha.update(block)

@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# -*- coding: utf8 -*-
+# -*- coding: utf8 -*-
 
 # Copyright (C) 2013-2014 Craig Phillips.  All rights reserved.
 
@@ -9,6 +11,7 @@ from datetime import datetime
 
 # Make stdout unbuffered.
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+
 
 class Channel(object):
     """Base channel class to define the interface"""
@@ -39,7 +42,7 @@ class Channel(object):
         """Writes messages to the buffer provided by this channel."""
 
         if self._priority >= priority:
-            sys.stdout.write("%s\n" % msg)
+            sys.stdout.write(u"%s\n" % unicode(msg))
 
 
 class Debug(Channel):
@@ -122,7 +125,8 @@ class Itemize(object):
     summary on stdout and stderr.
     """
     def __call__(self, changes, filename):
-        sys.stdout.write("%11s %s\n" % (str(changes[:11]), filename))
+        sys.stdout.write(u"%11s %s\n" % \
+            (unicode(changes[:11]), unicode(filename)))
 
 
 class Progress(object):
@@ -152,9 +156,9 @@ class Progress(object):
             mins = int(epoch / 60) % 60
             hrs = int((epoch / 60) / 60) % 60
 
-            sys.stdout.write("\r%12d %3d%% %11s %10s" % (
-                self.bytes_written, self.percentage, self.rate(),
-                "%d:%02d:%02d" % (hrs, mins, secs)
+            sys.stdout.write(u"\r%12d %3d%% %11s %10s" % (
+                self.bytes_written, self.percentage, unicode(self.rate()),
+                u"%d:%02d:%02d" % (hrs, mins, secs)
             ))
         
     def __call__(self, status):
@@ -199,7 +203,7 @@ class Progress(object):
 
         if self._enable_output:
             self.write()
-            sys.stdout.write("\n")
+            sys.stdout.write(u"\n")
 
 
 class Critical(object):
@@ -208,7 +212,7 @@ class Critical(object):
     and stderr IO buffers.
     """
     def __call__(self, ex):
-        sys.stderr.write("gsync: %s\n" % str(ex))
+        sys.stderr.write(u"gsync: %s\n" % unicode(ex))
 
         from libgsync import __version__
         import traceback
@@ -227,7 +231,7 @@ class Critical(object):
                 lineno = tb[i][1]
                 break
 
-        sys.stderr.write("gsync error: %s at %s(%d) [client=%s]\n" % (
+        sys.stderr.write(u"gsync error: %s at %s(%d) [client=%s]\n" % (
             ex.__class__.__name__, source_file, lineno, __version__
         ))
 

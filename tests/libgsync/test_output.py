@@ -162,7 +162,7 @@ class ProgressStatus(object):
 
 class TestProgress(TestCaseStdStringIO):
     def test_with_disabled_output(self):
-        channel = Progress(enableOutput = False)
+        channel = Progress(enable_output=False)
 
         self.assertEqual("", sys.stdout.getvalue())
         self.assertEqual("", sys.stderr.getvalue())
@@ -174,7 +174,7 @@ class TestProgress(TestCaseStdStringIO):
         self.assertEqual("", sys.stderr.getvalue())
 
     def test_with_enabled_output(self):
-        channel = Progress(enableOutput = True)
+        channel = Progress(enable_output=True)
 
         self.assertNotEqual("", sys.stdout.getvalue())
         self.assertEqual("", sys.stderr.getvalue())

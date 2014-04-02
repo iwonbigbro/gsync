@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf8 -*-
 
 # Copyright (C) 2013-2014 Craig Phillips.  All rights reserved.
 
@@ -20,8 +21,8 @@ from base64 import b64encode, b64decode
 
 try:
     import cPickle as pickle
-except ImportError:
-    import pickle # pragma: no cover
+except ImportError: # pragma: no cover
+    import pickle
 
 from libgsync.output import verbose, debug, itemize
 from libgsync.drive.mimetypes import MimeTypes
@@ -223,7 +224,7 @@ class SyncFileInfo(object):
             return
 
         if isinstance(value, unicode):
-            value = value.encode("utf8") # pylint: disable-msg=E1103
+            value = unicode(value).encode("utf8")
 
         if isinstance(value, str):
             # First decode using new base64 compressed method.
@@ -237,7 +238,7 @@ class SyncFileInfo(object):
 
             # That failed, try to decode using old hex encoding.
             try:
-                dvalue = value.decode("hex") # pylint: disable-msg=E1103
+                dvalue = str(value).decode("hex")
                 self._dict['statInfo'] = pickle.loads(dvalue)
                 self._dict['description'] = value
                 return

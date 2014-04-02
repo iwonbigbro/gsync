@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf8 -*-
 
 # Copyright (C) 2013-2013 Craig Phillips.  All rights reserved.
 

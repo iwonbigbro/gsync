@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf8 -*-
 
 # Copyright (C) 2013-2014 Craig Phillips.  All rights reserved.
 
@@ -856,7 +857,7 @@ class Drive(object):
             res = None
             req = service.files().update(
                 fileId=info.id,
-                body=info.dict(),
+                body=info.copy(),
                 setModifiedDate=options.get('setModifiedDate', False),
                 newRevision=True,
                 media_body=kwargs.get('media_body')

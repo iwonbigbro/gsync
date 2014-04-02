@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+# -*- coding: utf8 -*-
 
 # Copyright (C) 2014 Craig Phillips.  All rights reserved.
+
 import unittest, os, inspect
 from libgsync.output import debug
 from libgsync.drive import Drive, DriveFile, DrivePathCache
@@ -12,7 +14,7 @@ from apiclient.http import MediaFileUpload
 # we simply skip them and flag them as such.
 def requires_auth(func):
     def __requires_auth(testcase, *args, **kwargs):
-        config_dir = Drive()._getConfigDir()
+        config_dir = Drive()._get_config_dir()
         credentials = os.path.join(config_dir, "credentials")
 
         if os.path.exists(credentials):
@@ -33,11 +35,11 @@ def setup_drive_data(testcase):
     assert os.path.exists("tests/data")
 
     drive = Drive()
-    drive.delete("drive://gsync_unittest/", skipTrash=True)
+    drive.delete("drive://gsync_unittest/", skip_trash=True)
     drive.mkdir("drive://gsync_unittest/")
     drive.create("drive://gsync_unittest/open_for_read.txt", {})
     drive.update("drive://gsync_unittest/open_for_read.txt", {},
-        MediaFileUpload("tests/data/open_for_read.txt",
+        media_body=MediaFileUpload("tests/data/open_for_read.txt",
             mimetype=MimeTypes.BINARY_FILE, resumable=True
         )
     )
@@ -233,7 +235,7 @@ class TestDrive(unittest.TestCase):
         self.assertIsNotNone(info)
         self.assertEqual(info.title, "g")
 
-        drive.delete("drive://gsync_unittest/test_mkdir", skipTrash=True)
+        drive.delete("drive://gsync_unittest/test_mkdir", skip_trash=True)
 
     @requires_auth
     def test_listdir(self):
@@ -281,10 +283,10 @@ class TestDrive(unittest.TestCase):
         info = drive.update("drive://gsync_unittest/update_test", {
                 "description": "New description"
             },
-            MediaFileUpload("tests/data/open_for_read.txt",
+            media_body=MediaFileUpload("tests/data/open_for_read.txt",
                 mimetype=MimeTypes.BINARY_FILE, resumable=True
             ),
-            progress_callback
+            progress_callback=progress_callback
         )
         self.assertEqual(info['description'], "New description")
         self.assertTrue(int(info['fileSize']) > 0)
@@ -352,7 +354,7 @@ class TestDriveFileObject(unittest.TestCase):
             info = drive.update("drive://gsync_unittest/revision_test", {
                     "description": description
                 },
-                MediaFileUpload("tests/data/open_for_read.txt",
+                media_body=MediaFileUpload("tests/data/open_for_read.txt",
                     mimetype=MimeTypes.BINARY_FILE, resumable=True
                 )
             )

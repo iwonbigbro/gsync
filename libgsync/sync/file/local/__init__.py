@@ -1,10 +1,12 @@
 #!/usr/bin/env python
+# -*- coding: utf8 -*-
 
 # Copyright (C) 2013-2014 Craig Phillips.  All rights reserved.
 
 """Local version of the SyncFile type for handling local file access"""
 
-import os, datetime, hashlib
+import os, datetime
+import libgsync.hashlib as hashlib
 from libgsync.output import verbose, debug, itemize, Progress
 from libgsync.drive.mimetypes import MimeTypes
 from libgsync.sync import SyncType
@@ -53,15 +55,14 @@ class SyncFileLocal(SyncFile):
                 md5_checksum = self._md5_checksum(path)
 
             info = SyncFileInfo(
-                None,
-                filename,
-                datetime.datetime.utcfromtimestamp(
+                title=filename,
+                modifiedDate=datetime.datetime.utcfromtimestamp(
                     st_info.st_mtime
                 ).isoformat(),
-                mimeType = mimetype,
-                description = st_info,
-                fileSize = st_info.st_size,
-                md5Checksum = md5_checksum,
+                mimeType=mimetype,
+                description=st_info,
+                fileSize=st_info.st_size,
+                md5Checksum=md5_checksum,
                 path=path
             )
             debug("Local file = %s" % repr(info), 3)
@@ -118,7 +119,7 @@ class SyncFileLocal(SyncFile):
             return None
 
         try:
-            md5_gen = hashlib.md5()
+            md5_gen = hashlib.new("md5")
 
             with open(path, "r") as fd:
                 # Read the file in 1K chunks to avoid memory consumption
@@ -127,7 +128,7 @@ class SyncFileLocal(SyncFile):
                     if not chunk:
                         break
 
-                    md5_gen.update(chunk) # pylint: disable-msg=E1101
+                    md5_gen.update(chunk)
 
                 return md5_gen.hexdigest()
 
