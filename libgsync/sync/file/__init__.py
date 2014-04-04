@@ -83,7 +83,15 @@ class SyncFileInfoDatetime(object):
         return self.__value.strftime("%Y-%m-%dT%H:%M:%S.%fd+00:00")
 
     def __secs(self):
-        return (self.__value - self.__epoch).total_seconds()
+        delta = (self.__value - self.__epoch)
+        try:
+            return delta.total_seconds()
+        except AttributeError: # pragma: no cover
+            return (
+                delta.microseconds + (
+                    delta.seconds + delta.days * 24 * 3600
+                ) * 10**6
+            ) / 10**6
 
     def __int__(self):
         return int(self.__secs())
