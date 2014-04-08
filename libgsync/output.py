@@ -6,11 +6,12 @@
 
 """Defines output channels for gsync"""
 
-import os, sys, inspect, re
+import os, sys, inspect, re, codecs
 from datetime import datetime
 
 # Make stdout unbuffered.
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+sys.stdout = (codecs.getwriter(sys.stdout.encoding))\
+    (os.fdopen(sys.stdout.fileno(), "w", 0), "replace")
 
 
 class Channel(object):
