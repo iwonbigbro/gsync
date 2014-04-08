@@ -104,8 +104,6 @@ for testpath in $(find $progdir/tests -type f -name 'test_*.sh') ; do
         export TESTCASETMP=$(mktemp -d $OUTPUT/tmp/$testname.XXXXXXXX)
         [[ $nocleanup ]] || trap "rm -rf $TESTCASETMP" EXIT
 
-        export SRC=/usr/lib/python2.7
-
         printf "Importing: $testname ... "
 
         . $testpath || error $?
@@ -113,8 +111,9 @@ for testpath in $(find $progdir/tests -type f -name 'test_*.sh') ; do
         echo "ok"
 
         for fn in $(declare -f | awk '/^test_/ { print $1 }') ; do
-            export TESTTMP=$TESTCASETMP/$fn
-            mkdir -p $TESTTMP
+            export LOCAL_TESTTMP=$TESTCASETMP/$fn
+            export REMOTE_TESTTMP=drive:///gsync_regression/tmp/$fn
+            mkdir -p $LOCAL_TESTTMP
 
             printf "Running: $fn ... "
             ( $fn ; exitwith $? )
