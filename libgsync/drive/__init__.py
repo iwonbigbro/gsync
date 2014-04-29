@@ -5,9 +5,15 @@
 
 """The GSync Drive module that provides an interface to the Google Drive"""
 
-import os, sys, re, datetime, shelve, time
+import os, sys, re, datetime, shelve, time, retrying
 
 from contextlib import contextmanager
+
+# Setup default retryer.
+retryer = retrying.retry(
+    wait='fixed_sleep', wait_fixed=60000,
+    stop='stop_after_attempt', stop_max_attempt_number=2
+)
 
 try:
     import simplejson as json
@@ -893,6 +899,7 @@ class Drive(object):
         debug("Update failed")
         raise Exception("Update failed")
     
+    @retryer
     def _query(self, **kwargs):
         """
         Performs a query against the Google Drive, returning an entity list
