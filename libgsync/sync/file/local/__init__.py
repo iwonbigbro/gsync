@@ -47,6 +47,9 @@ class SyncFileLocal(SyncFile):
 
             if os.path.isdir(path):
                 mimetype = MimeTypes.FOLDER
+            elif os.path.islink(path):
+                st_info = os.lstat(path)
+                mimetype = MimeTypes.SYMLINK
             else:
                 mimetype = MimeTypes.get(path)
 
@@ -144,6 +147,16 @@ class SyncFileLocal(SyncFile):
 
         if not GsyncOptions.dry_run:
             os.mkdir(path)
+
+
+    def _create_symlink(self, path, src):
+        debug("Creating local symlink: %s" % repr(path))
+
+        if not GsyncOptions.dry_run:
+            #link_source = src.
+            #os.symlink(, path)
+            # TODO
+            pass
 
 
     def _create_file(self, path, src):
