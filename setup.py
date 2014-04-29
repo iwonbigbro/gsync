@@ -38,6 +38,7 @@ setup(
         'python-dateutil >= 1.5',
         'python-gflags >= 2.0',
         'python-magic >= 0.4.6',
+        'retrying >= 1.1.0',
         'urllib3 >= 1.5',
     ],
     packages = [
