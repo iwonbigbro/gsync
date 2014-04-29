@@ -45,7 +45,6 @@ class Channel(object):
         if self._priority >= priority:
             sys.stdout.write(u"%s\n" % unicode(msg))
 
-
 class Debug(Channel):
     """
     Defines a debug channel for writing debugging information to stdout
@@ -161,6 +160,7 @@ class Progress(object):
                 self.bytes_written, self.percentage, unicode(self.rate()),
                 u"%d:%02d:%02d" % (hrs, mins, secs)
             ))
+            sys.stdout.flush()
         
     def __call__(self, status):
         self.time_taken = (datetime.now() - self._start).seconds

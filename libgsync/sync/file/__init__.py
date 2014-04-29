@@ -147,7 +147,7 @@ class SyncFileInfo(object):
             'title': kwargs['title'],
             'modifiedDate': SyncFileInfoDatetime(kwargs['modifiedDate']),
             'mimeType': kwargs['mimeType'],
-            'description': kwargs['description'],
+            'description': description,
             'statInfo': None,
             'fileSize': file_size,
             'md5Checksum': md5_sum,

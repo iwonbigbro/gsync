@@ -17,7 +17,7 @@ The only functional difference is that gsync is intended to be used for
 synchronising between a source directory and remote Google Drive directory.
 
 Usage:
- gsync ( --authenticate [--debug] | [options]... <path> <path>... )
+ gsync ( --authenticate | [options]... <path> <path>... )
 
 Arguments:
  <path>                      path to a local file, directory, remote file or 
