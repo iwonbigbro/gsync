@@ -45,7 +45,6 @@ class Channel(object):
         if self._priority >= priority:
             sys.stdout.write(u"%s\n" % unicode(msg))
 
-
 class Debug(Channel):
     """
     Defines a debug channel for writing debugging information to stdout
