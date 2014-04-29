@@ -147,7 +147,7 @@ class SyncFileInfo(object):
             'title': kwargs['title'],
             'modifiedDate': SyncFileInfoDatetime(kwargs['modifiedDate']),
             'mimeType': kwargs['mimeType'],
-            'description': kwargs['description'],
+            'description': description,
             'statInfo': None,
             'fileSize': file_size,
             'md5Checksum': md5_sum,
@@ -332,6 +332,10 @@ class SyncFile(object):
         """Pure virtual function"""
         raise NotImplementedError
 
+    def _create_symlink(self, path, src): # pragma: no cover
+        """Pure virtual function"""
+        raise NotImplementedError
+
     def _create_file(self, path, src): # pragma: no cover
         """Pure virtual function"""
         raise NotImplementedError
@@ -348,6 +352,9 @@ class SyncFile(object):
         self._create_file(path, src)
         self._update_data(path, src)
         self.__update_attrs(path, src)
+
+    def __create_symlink(self, path, src = None):
+        self._create_symlink(path, src)
 
     def __create_dir(self, path, src = None):
         self._create_dir(path, src)
@@ -437,6 +444,10 @@ class SyncFile(object):
 
         if src_info is None or src_info.mimeType == MimeTypes.FOLDER:
             self.__create_dir(path, src_obj)
+            return
+
+        if src_info.mimeType == MimeTypes.SYMLINK:
+            self.__create_symlink(path, src_obj)
             return
 
         self.__create_file(path, src_obj)
