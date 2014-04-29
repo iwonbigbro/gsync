@@ -155,7 +155,6 @@ class SyncFileLocal(SyncFile):
         if not GsyncOptions.dry_run:
             #link_source = src.
             #os.symlink(, path)
-            # TODO
             pass
 
 
@@ -175,6 +174,7 @@ class SyncFileLocal(SyncFile):
         finally:
             if fd is not None:
                 fd.close()
+
 
     def _update_data(self, path, src):
         path = self.get_path(path)

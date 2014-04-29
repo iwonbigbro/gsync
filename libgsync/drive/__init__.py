@@ -10,7 +10,7 @@ import os, sys, re, datetime, shelve, time, retrying
 from contextlib import contextmanager
 
 # Setup default retryer.
-retryer = retrying.retry(
+retryer = retrying.retry( # pylint: disable-msg=C0103
     wait='fixed_sleep', wait_fixed=60000,
     stop='stop_after_attempt', stop_max_attempt_number=2
 )
