@@ -297,7 +297,7 @@ class Drive(object):
         strval_unicode = None
 
         if not isinstance(strval, basestring):
-            strval = unicode(str(strval))
+            strval = unicode(str(strval), "utf-8")
 
         if isinstance(strval, unicode):
             strval_unicode = strval

@@ -14,6 +14,13 @@ sys.stdout = (codecs.getwriter(sys.stdout.encoding))\
     (os.fdopen(sys.stdout.fileno(), "w", 0), "replace")
 
 
+def to_unicode(strval):
+    if isinstance(strval, unicode):
+        return strval
+
+    return unicode(strval, "utf-8")
+
+
 class Channel(object):
     """Base channel class to define the interface"""
 
@@ -36,21 +43,25 @@ class Channel(object):
 
         return self._priority > 0
 
-    def __call__(self, msg, priority=1):
-        self.write(msg, priority)
+    def __call__(self, msg, *args, **kwargs):
+        self.write(msg, *args, **kwargs)
 
-    def write(self, msg, priority=1):
+    def write(self, msg, *args, **kwargs):
         """Writes messages to the buffer provided by this channel."""
 
+        priority = kwargs.get('priority', 1)
+
         if self._priority >= priority:
-            sys.stdout.write(u"%s\n" % unicode(msg))
+            sys.stdout.write(u"%s\n" % to_unicode(msg))
 
 class Debug(Channel):
     """
     Defines a debug channel for writing debugging information to stdout
     and stderr.
     """
-    def write(self, msg, priority=1):
+    def write(self, msg, *args, **kwargs):
+        priority = kwargs.get('priority', 1)
+
         if self._priority >= priority:
             stack = inspect.stack()
             indent = "".join([ " " for _ in range(len(stack) - 2) ])
@@ -126,7 +137,7 @@ class Itemize(object):
     """
     def __call__(self, changes, filename):
         sys.stdout.write(u"%11s %s\n" % \
-            (unicode(changes[:11]), unicode(filename)))
+            (to_unicode(changes[:11]), to_unicode(filename)))
 
 
 class Progress(object):
@@ -157,7 +168,7 @@ class Progress(object):
             hrs = int((epoch / 60) / 60) % 60
 
             sys.stdout.write(u"\r%12d %3d%% %11s %10s" % (
-                self.bytes_written, self.percentage, unicode(self.rate()),
+                self.bytes_written, self.percentage, to_unicode(self.rate()),
                 u"%d:%02d:%02d" % (hrs, mins, secs)
             ))
         
@@ -212,7 +223,7 @@ class Critical(object):
     and stderr IO buffers.
     """
     def __call__(self, ex):
-        sys.stderr.write(u"gsync: %s\n" % unicode(ex))
+        sys.stderr.write(u"gsync: %s\n" % to_unicode(ex))
 
         from libgsync import __version__
         import traceback
