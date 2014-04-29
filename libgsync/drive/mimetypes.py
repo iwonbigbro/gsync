@@ -16,6 +16,7 @@ class MimeTypes(object):
     NONE = "none/unknown-mimetype"
     FOLDER = "application/vnd.google-apps.folder"
     BINARY_FILE = "application/octet-stream"
+    SYMLINK = "inode/symlink"
 
     @staticmethod
     def get(path):
