@@ -184,7 +184,7 @@ class DriveFileObject(object):
 
         with Drive().service() as service:
             http = service._http # pylint: disable-msg=W0212
-            http.follow_redirects = False 
+            http.follow_redirects = False
 
             if length is None:
                 length = self._size - self._offset
@@ -200,10 +200,10 @@ class DriveFileObject(object):
                 return ""
 
             headers = {
-                'range': 'bytes=%d-%d' % ( 
+                'range': 'bytes=%d-%d' % (
                     self._offset,
                     self._offset + length
-                ) 
+                )
             }
 
             res, data = http.request(url, headers=headers)
@@ -211,8 +211,8 @@ class DriveFileObject(object):
                 and 'location' in res
 
             if retry: # pragma: no cover
-                url = res['location'] 
-                res, data = http.request(url, headers=headers) 
+                url = res['location']
+                res, data = http.request(url, headers=headers)
 
             if res.status in [ 200, 206 ]:
                 self._offset += length
@@ -264,7 +264,7 @@ class DrivePathCache(object):
 
     def __repr__(self):
         return "DrivePathCache(%s)" % repr(self.__data)
-        
+
 
 class Drive(object):
     """Defines the singleton Google Drive API interface class."""
@@ -284,7 +284,7 @@ class Drive(object):
         self._pcache = DrivePathCache()
 
         debug("Initialisation complete")
-     
+
     @staticmethod
     def unicode(strval):
         """
@@ -355,7 +355,7 @@ class Drive(object):
         debug("Loading Google Drive service from config")
 
         from apiclient.discovery import build_from_document, DISCOVERY_URI
-        
+
         debug("Downloading API service")
 
         import uritemplate
@@ -427,7 +427,7 @@ class Drive(object):
         storagefile = self._get_config_file('credentials')
 
         if not os.path.exists(storagefile):
-            open(storagefile, 'a+b').close() 
+            open(storagefile, 'a+b').close()
 
         from oauth2client.file import Storage
         storage = Storage(storagefile)
@@ -747,7 +747,7 @@ class Drive(object):
         """Returns True if the file at the specified path is a directory"""
         ent = self.stat(path)
         return ent is not None and ent.mimeType == MimeTypes.FOLDER
-    
+
     def listdir(self, path):
         """Returns a list of directory contents at the specified location"""
         ent = self.stat(path)
@@ -813,7 +813,8 @@ class Drive(object):
         debug(" * merging properties...")
         body = {}
         for key, val in properties.iteritems():
-            body[key] = Drive.utf8(val)
+            if val is not None:
+                body[key] = Drive.utf8(val)
 
         # Retain the title from the path being created.
         body['title'] = Drive.utf8(os.path.basename(path))
@@ -898,7 +899,7 @@ class Drive(object):
 
         debug("Update failed")
         raise Exception("Update failed")
-    
+
     @retryer
     def _query(self, **kwargs):
         """
