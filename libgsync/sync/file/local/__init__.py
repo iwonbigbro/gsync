@@ -13,6 +13,7 @@ from libgsync.sync import SyncType
 from libgsync.sync.file import SyncFile, SyncFileInfo
 from libgsync.options import GsyncOptions
 from apiclient.http import MediaFileUpload, MediaUploadProgress
+from dateutil.tz import tzutc
 
 
 class SyncFileLocal(SyncFile):
@@ -62,7 +63,7 @@ class SyncFileLocal(SyncFile):
                 title=filename,
                 modifiedDate=datetime.datetime.utcfromtimestamp(
                     st_info.st_mtime
-                ).isoformat(),
+                ).replace(tzinfo=tzutc()).isoformat(),
                 mimeType=mimetype,
                 description=st_info,
                 fileSize=st_info.st_size,

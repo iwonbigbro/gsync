@@ -12,11 +12,12 @@ from libgsync.sync.file import SyncFile, SyncFileInfo
 from libgsync.options import GsyncOptions
 from apiclient.http import MediaIoBaseUpload, MediaUploadProgress
 from libgsync.drive import Drive
+from dateutil.tz import tzutc
 
 
 class SyncFileRemote(SyncFile):
     """SyncFileRemote implementation for the SyncFile adapter"""
-    
+
     def __init__(self, path):
         super(SyncFileRemote, self).__init__(path)
         self._path = self.normpath(path)
@@ -137,7 +138,7 @@ class SyncFileRemote(SyncFile):
         def __callback(status):
             bytes_written = int(status.resumable_progress)
             self.bytes_written = total_bytes_written + bytes_written
-            
+
         progress = Progress(GsyncOptions.progress, __callback)
 
         if GsyncOptions.dry_run:
@@ -182,12 +183,12 @@ class SyncFileRemote(SyncFile):
             st_info[5] = attrs.gid
         if attrs.atime is not None:
             st_info[7] = attrs.atime
-        
+
         info.set_stat_info(st_info)
 
         mtime_utc = datetime.datetime.utcfromtimestamp(
-            attrs.mtime).isoformat()
-            
+            attrs.mtime).replace(tzinfo=tzutc()).isoformat()
+
         Drive().update(path, properties = {
             'description': info.description,
             'modifiedDate': mtime_utc,

@@ -80,7 +80,7 @@ class SyncFileInfoDatetime(object):
         return "SyncFileInfoDatetime(%s)" % repr(self.__value)
 
     def __str__(self):
-        return self.__value.strftime("%Y-%m-%dT%H:%M:%S.%fd+00:00")
+        return self.__value.strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
 
     def __secs(self):
         delta = (self.__value - self.__epoch)
@@ -217,14 +217,14 @@ class SyncFileInfo(object):
             value = os_platform.stat_result(tuple(value))
             self._dict['statInfo'] = value
             self._dict['description'] = \
-                b64encode(compress(pickle.dumps(value))) 
+                b64encode(compress(pickle.dumps(value)))
 
             return
-            
+
         if isinstance(value, os_platform.stat_result):
             try:
                 self._dict['description'] = \
-                    b64encode(compress(pickle.dumps(value))) 
+                    b64encode(compress(pickle.dumps(value)))
                 self._dict['statInfo'] = value
             except pickle.PicklingError:
                 pass
