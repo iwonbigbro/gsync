@@ -187,7 +187,9 @@ class SyncFileRemote(SyncFile):
         info.set_stat_info(st_info)
 
         mtime_utc = datetime.datetime.utcfromtimestamp(
-            attrs.mtime).replace(tzinfo=tzutc()).isoformat()
+            #attrs.mtime).isoformat()
+            #attrs.mtime).replace(tzinfo=tzutc()).isoformat()
+            attrs.mtime).replace(tzinfo=tzutc()).strftime("%Y-%m-%dT%H:%M:%S.%f%z")
 
         Drive().update(path, properties = {
             'description': info.description,
