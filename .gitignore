@@ -10,3 +10,6 @@ regression/tmp/
 ctags
 
 MANIFEST
+
+.DS_Store
+*~
